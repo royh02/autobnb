@@ -10,4 +10,4 @@ Use conda, python 3.10, and do
 
 # Run
 
-`python main.py`
+`python main.py <args>`
