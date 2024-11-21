@@ -4,6 +4,88 @@ import sys
 import os
 import json
 import difflib
+from dateutil.parser import parse
+
+
+from typing import Dict, List
+
+def fetch_listings_data(user_prompt: str) -> Dict[str, str]:
+    
+    """
+    This function takes in a user prompt for listing search features and identifies the key filters for fetching Airbnb listings.
+    Converts textual dates into numerical formats (YYYY-MM-DD).
+
+    Args:
+        user_prompt (str): The user's input describing their desired listing features.
+    
+    Returns:
+        Dict[str, str]: A dictionary with the identified filters, or blanks if not specified.
+
+    The listing fetch agent should have access to this function signature, and it should be able to suggest this as a function call.
+
+    Example:
+    > user_prompt = "
+        I want to go to New York for vacation. My travel dates are from December 20, 2024, to December 27, 2024. 
+        I'd like to spend no more than $500 per night. I'm looking for a property with three bedrooms, 
+        and I really want amenities like a back patio for barbeques and a pool.
+        "
+    > fetch_listings_data(user_prompt)
+    {
+        "Location": "New York",
+        "Travel dates": {"Check-in": "2024-12-20", "Check-out": "2024-12-27"},
+        "Price range": {"Minimum": "", "Maximum": "$500"},
+        "Property type": "",
+        "Number of rooms": "3",
+        "Beds": "",
+        "Baths": "",
+        "Desired amenities": ["Back patio for barbeque", "Pool"],
+    }
+    """
+    # Initialize the output dictionary with blank defaults
+    search_filters = {
+        "Location": "",
+        "Travel dates": {"Check-in": "", "Check-out": ""},
+        "Price range": {"Minimum": "", "Maximum": ""},
+        "Property type": "",
+        "Number of rooms": "",
+        "Beds": "",
+        "Baths": "",
+        "Desired amenities": [],
+    }
+    
+    # Process the user prompt to extract the relevant filters
+    lines = user_prompt.split('\n')
+    for line in lines:
+        lower_line = line.lower()
+        if "location" in lower_line:
+            search_filters["Location"] = line.split(":")[-1].strip()
+        elif "check-in" in lower_line or "check-out" in lower_line:
+            if "check-in" in lower_line:
+                date = line.split(":")[-1].strip()
+                search_filters["Travel dates"]["Check-in"] = parse(date).strftime("%Y-%m-%d")
+            if "check-out" in lower_line:
+                date = line.split(":")[-1].strip()
+                search_filters["Travel dates"]["Check-out"] = parse(date).strftime("%Y-%m-%d")
+        elif "price range" in lower_line or "price" in lower_line:
+            if "min" in lower_line:
+                search_filters["Price range"]["Minimum"] = line.split(":")[-1].strip()
+            if "max" in lower_line:
+                search_filters["Price range"]["Maximum"] = line.split(":")[-1].strip()
+        elif "property type" in lower_line:
+            search_filters["Property type"] = line.split(":")[-1].strip()
+        elif "rooms" in lower_line:
+            search_filters["Number of rooms"] = line.split(":")[-1].strip()
+        elif "beds" in lower_line:
+            search_filters["Beds"] = line.split(":")[-1].strip()
+        elif "baths" in lower_line:
+            search_filters["Baths"] = line.split(":")[-1].strip()
+        elif "amenities" in lower_line or "amenity" in lower_line:
+            amenities = line.split(":")[-1].strip()
+            search_filters["Desired amenities"] = [a.strip() for a in amenities.split(",")]
+    
+    return search_filters
+
+
 
 def fetch_restaurant_data(restaurant_name: str) -> Dict[str, List[str]]:
     # TODO
@@ -143,6 +225,8 @@ def main(user_query: str):
     review_analysis_agent_system_message = "You are a review analysis agent. You take the reviews from the data fetch agent and calculates lists of food scores and customer service scores. Once the entrypoint agent gives you a dictionary output, just give it back to it again with no changes." # TODO
     scoring_agent_system_message = "You are a scoring agent. You take the food scores and customer service scores from the review analysis agent and calculate the overall score." # TODO
     data_fetch_agent_system_message = "You are a data fetch agent. You take the user prompt and find a restaurant to call fetch_restaurant_data on. Once the entrypoint agent gives you a dictionary output, just give it back to it again with no changes." # TODO
+    listing_fetch_agent_system_message = "You are the listing fetch agent. You are responsible for taking the user prompt and find a Airbnb to call fetch_listings_data on."
+
     # example LLM config for the entrypoint agent
     llm_config = {"config_list": [{"model": "gpt-4o-mini", "api_key": os.environ.get("OPENAI_API_KEY")}]}
     # the main entrypoint/supervisor agent
@@ -171,6 +255,12 @@ def main(user_query: str):
                                         is_termination_msg=is_valid_dict)
     scoring_agent.register_for_llm(name="calculate_overall_score", description="Calculates the overall score of a restaurant based on food score and customer service score")(calculate_overall_score)
     
+
+    listing_fetch_agent = ConversableAgent("listing_fetch_agent", 
+                                        system_message=listing_fetch_agent_system_message, 
+                                        llm_config=llm_config,
+                                        is_termination_msg=is_valid_dict)
+    listing_fetch_agent.register_for_llm(name="fetch_listings_data", description="Fetches the Airbnb listings depending on user preferences.")(fetch_listings_data)
     
     # TODO
     # Fill in the argument to `initiate_chats` below, calling the correct agents sequentially.
