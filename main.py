@@ -85,7 +85,191 @@ def fetch_listings_data(user_prompt: str) -> Dict[str, str]:
     
     return search_filters
 
+def validate_listing_data(listing_agent_response: dict, search_agent_response: list[dict]) -> list[int]:
+    """
+    This function takes in a user prompt for listing search features (listing_agent_response)
+    and a list of listings that were found (search_agent_response). It outputs a list of integers,
+    each on a scale of 1 to 5, indicating how well the listing matches the user's search criteria.
 
+    Args:
+        listing_agent_response (Dict[str, str or dict or list]): A dictionary with the user's filters.
+        search_agent_response (List[Dict[str, str or dict or list]]): A list of dictionaries where
+           each dictionary represents one Airbnb listing and its actual attributes.
+
+    Returns:
+        List[int]: A list of integers, where each integer is a rating (1-5) of how well a listing
+                   matches the user's specified criteria.
+
+    Example:
+    > listing_agent_response = {
+        "Location": "New York",
+        "Travel dates": {"Check-in": "2024-12-20", "Check-out": "2024-12-27"},
+        "Price range": {"Minimum": "", "Maximum": "$500"},
+        "Property type": "",
+        "Number of rooms": "3",
+        "Beds": "",
+        "Baths": "",
+        "Desired amenities": ["Back patio for barbeque", "Pool"],
+    }
+
+    > search_agent_response = [
+        {
+            "Location": "New York",
+            "Travel dates": {"Check-in": "2024-12-20", "Check-out": "2024-12-27"},
+            "Price range": 250,
+            "Property type": "house",
+            "Number of rooms": "3",
+            "Beds": "3",
+            "Baths": "5",
+            "Amenities": ["Pool", "Washer", "Dryer"],
+        }, 
+        {
+            "Location": "New York",
+            "Travel dates": {"Check-in": "2024-12-22", "Check-out": "2024-12-26"},
+            "Price": 100,
+            "Property type": "house",
+            "Number of rooms": "3",
+            "Beds": "6",
+            "Baths": "3",
+            "Amenities": ["Rotunda", "Garage"],
+        }, 
+    ]
+    > validate_listing_data(listing_agent_response, search_agent_response)
+    [4, 3]
+    """
+
+    def parse_price(price_str):
+        """Parse a price string that might start with a dollar sign or be empty."""
+        if isinstance(price_str, (int, float)):
+            return float(price_str)
+        if not price_str:
+            return None
+        return float(price_str.replace("$", ""))
+
+    # Extract user’s criteria
+    user_location = listing_agent_response.get("Location", "").strip()
+    user_dates = listing_agent_response.get("Travel dates", {})
+    user_check_in = user_dates.get("Check-in", "")
+    user_check_out = user_dates.get("Check-out", "")
+    user_price_range = listing_agent_response.get("Price range", {})
+    user_min_price = parse_price(user_price_range.get("Minimum", ""))
+    user_max_price = parse_price(user_price_range.get("Maximum", ""))
+    user_property_type = listing_agent_response.get("Property type", "").strip()
+    user_rooms = listing_agent_response.get("Number of rooms", "").strip()
+    user_beds = listing_agent_response.get("Beds", "").strip()
+    user_baths = listing_agent_response.get("Baths", "").strip()
+    user_amenities = listing_agent_response.get("Desired amenities", [])
+
+    criteria = []
+
+    if user_location:
+        criteria.append("location")
+    if user_check_in and user_check_out:
+        criteria.append("dates")
+    if user_min_price is not None or user_max_price is not None:
+        criteria.append("price")
+    if user_property_type:
+        criteria.append("property_type")
+    if user_rooms:
+        criteria.append("rooms")
+    if user_beds:
+        criteria.append("beds")
+    if user_baths:
+        criteria.append("baths")
+    if user_amenities:
+        criteria.append("amenities")
+
+    ratings = []
+
+    # If no criteria specified at all, default all listings to lowest rating (1)
+    if not criteria:
+        return [1 for _ in search_agent_response]
+
+    # Helper function to check date overlap or match:
+    def date_match(user_in, user_out, listing_in, listing_out):
+        if not (user_in and user_out and listing_in and listing_out):
+            return False
+        return (listing_in >= user_in) and (listing_out <= user_out)
+
+    # For each listing in search_agent_response, evaluate criteria
+    for listing in search_agent_response:
+        matches = 0.0
+        total = len(criteria)
+
+        # LOCATION
+        if "location" in criteria:
+            listing_location = listing.get("Location", "").strip()
+            if listing_location.lower() == user_location.lower():
+                matches += 1
+
+        # DATES
+        if "dates" in criteria:
+            listing_dates = listing.get("Travel dates", {})
+            listing_check_in = listing_dates.get("Check-in", "")
+            listing_check_out = listing_dates.get("Check-out", "")
+            if date_match(user_check_in, user_check_out, listing_check_in, listing_check_out):
+                matches += 1
+            else:
+                # TODO: partial credit if one date matches?
+                pass
+
+        # PRICE
+        if "price" in criteria:
+            listing_price = listing.get("Price range", None)
+            if listing_price is None:
+                listing_price = listing.get("Price", None)
+            if listing_price is not None:
+                listing_price = parse_price(str(listing_price))
+                if (user_min_price is None or listing_price >= user_min_price) and (user_max_price is None or listing_price <= user_max_price):
+                    matches += 1
+
+        # PROPERTY TYPE
+        if "property_type" in criteria:
+            listing_property_type = listing.get("Property type", "").strip()
+            if listing_property_type.lower() == user_property_type.lower():
+                matches += 1
+
+        # ROOMS
+        if "rooms" in criteria:
+            listing_rooms = listing.get("Number of rooms", "").strip()
+            if listing_rooms == user_rooms:
+                matches += 1
+
+        # BEDS
+        if "beds" in criteria:
+            listing_beds = listing.get("Beds", "").strip()
+            if listing_beds == user_beds:
+                matches += 1
+
+        # BATHS
+        if "baths" in criteria:
+            listing_baths = listing.get("Baths", "").strip()
+            if listing_baths == user_baths:
+                matches += 1
+
+        # AMENITIES
+        if "amenities" in criteria:
+            listing_amenities = listing.get("Amenities", [])
+            desired_count = len(user_amenities)
+            if desired_count > 0:
+                matched_amenities = sum(1 for a in user_amenities if a.lower() in [x.lower() for x in listing_amenities]) 
+                # Full point if all matched, else partial credit 
+                if matched_amenities == desired_count:
+                    matches += 1
+                elif matched_amenities > 0:
+                    partial = matched_amenities / desired_count  
+                    matches += partial
+
+        # Final score: calculate ratio of matches to total available points, scale to 1-5 
+        ratio = matches / total if total > 0 else 0
+        rating = 1 + ratio * 4
+        final_rating = round(rating)
+        if final_rating < 1:
+            final_rating = 1
+        if final_rating > 5:
+            final_rating = 5
+
+        ratings.append(final_rating)    
 
 def fetch_restaurant_data(restaurant_name: str) -> Dict[str, List[str]]:
     # TODO
@@ -226,7 +410,7 @@ def main(user_query: str):
     scoring_agent_system_message = "You are a scoring agent. You take the food scores and customer service scores from the review analysis agent and calculate the overall score." # TODO
     data_fetch_agent_system_message = "You are a data fetch agent. You take the user prompt and find a restaurant to call fetch_restaurant_data on. Once the entrypoint agent gives you a dictionary output, just give it back to it again with no changes." # TODO
     listing_fetch_agent_system_message = "You are the listing fetch agent. You are responsible for taking the user prompt and find a Airbnb to call fetch_listings_data on."
-
+    description_agent_system_message = "You are the description agent. You are reseponsible for the output from the listing fetch agent that are filters from the user prompt and compare their requests with actual Airbnb listings, to create a list of scores from a scale of 1-5."
     # example LLM config for the entrypoint agent
     llm_config = {"config_list": [{"model": "gpt-4o-mini", "api_key": os.environ.get("OPENAI_API_KEY")}]}
     # the main entrypoint/supervisor agent
@@ -261,6 +445,11 @@ def main(user_query: str):
                                         llm_config=llm_config,
                                         is_termination_msg=is_valid_dict)
     listing_fetch_agent.register_for_llm(name="fetch_listings_data", description="Fetches the Airbnb listings depending on user preferences.")(fetch_listings_data)
+    description_agent = ConversableAgent("description_agent", 
+                                         system_message=description_agent_system_message, 
+                                         llm_config=llm_config,
+                                         is_termination_msg=is_valid_dict)
+    description_agent.register_for_llm(name="validate_listing_data", description="Analyzes the description, date availability, and price of the Airbnb listing.")(validate_listing_data)
     
     # TODO
     # Fill in the argument to `initiate_chats` below, calling the correct agents sequentially.
