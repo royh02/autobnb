@@ -4,12 +4,16 @@ import os
 
 from autogen_core.application import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
-from autogen_core.base import AgentId, AgentProxy
+from autogen_core.base import AgentId, AgentProxy, Subscription
 from autogen_magentic_one.agents.multimodal_web_surfer import MultimodalWebSurfer
 from autogen_magentic_one.agents.orchestrator import RoundRobinOrchestrator
 from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
+
+
+def create_websurfer_subscription() -> Subscription:
+    return Subscription(topic_id="web_surfer_topic")
 
 
 async def main() -> None:
@@ -26,6 +30,7 @@ async def main() -> None:
     await UserProxy.register(runtime, "UserProxy", UserProxy)
     user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
 
+    # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
     await RoundRobinOrchestrator.register(
         runtime, "orchestrator", lambda: RoundRobinOrchestrator([web_surfer, user_proxy])
     )
@@ -36,7 +41,7 @@ async def main() -> None:
     await actual_surfer.init(
         model_client=client,
         downloads_folder=os.getcwd(),
-        start_page="https://www.bing.com",
+        start_page="https://www.airbnb.com",
         browser_channel="chromium",
     )
 
