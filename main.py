@@ -271,6 +271,25 @@ def validate_listing_data(listing_agent_response: dict, search_agent_response: l
 
         ratings.append(final_rating)    
 
+def get_ranked_listings(description_agent_response: list[int]) -> list[int]:
+    """
+    This function takes in the result of the description agent and returns the indices of the 
+    list of entries returned by the search agent sorted in order of their scores descending.
+    
+    Args:
+        description_agent_response (List[int]): A list of ratings (1-5) for each search result.
+    
+    Returns:
+        List[int]: A list of indices of the search_agent_response sorted by the given ratings.
+
+    Example:
+    > description_agent_response = [4, 3]
+    > get_ranked_listings(description_agent_response)
+    [0, 1]
+    """
+    sorted_listing_idxs = sorted(range(len(description_agent_response)), key=lambda i: description_agent_response[i], reverse=True)
+    return sorted_listing_idxs
+
 def fetch_restaurant_data(restaurant_name: str) -> Dict[str, List[str]]:
     # TODO
     # This function takes in a restaurant name and returns the reviews for that restaurant. 
@@ -410,7 +429,9 @@ def main(user_query: str):
     scoring_agent_system_message = "You are a scoring agent. You take the food scores and customer service scores from the review analysis agent and calculate the overall score." # TODO
     data_fetch_agent_system_message = "You are a data fetch agent. You take the user prompt and find a restaurant to call fetch_restaurant_data on. Once the entrypoint agent gives you a dictionary output, just give it back to it again with no changes." # TODO
     listing_fetch_agent_system_message = "You are the listing fetch agent. You are responsible for taking the user prompt and find a Airbnb to call fetch_listings_data on."
-    description_agent_system_message = "You are the description agent. You are reseponsible for the output from the listing fetch agent that are filters from the user prompt and compare their requests with actual Airbnb listings, to create a list of scores from a scale of 1-5."
+    description_agent_system_message = "You are the description agent. You are responsible for the output from the listing fetch agent that are filters from the user prompt and compare their requests with actual Airbnb listings, to create a list of scores from a scale of 1-5."
+    ranking_agent_system_message = "You are the ranking agent. You are responsible for calling the get_ranked_listings tool on the output of the description agent."
+    
     # example LLM config for the entrypoint agent
     llm_config = {"config_list": [{"model": "gpt-4o-mini", "api_key": os.environ.get("OPENAI_API_KEY")}]}
     # the main entrypoint/supervisor agent
@@ -450,6 +471,11 @@ def main(user_query: str):
                                          llm_config=llm_config,
                                          is_termination_msg=is_valid_dict)
     description_agent.register_for_llm(name="validate_listing_data", description="Analyzes the description, date availability, and price of the Airbnb listing.")(validate_listing_data)
+    ranking_agent = ConversableAgent("ranking_agent", 
+                                     system_message=ranking_agent_system_message, 
+                                     llm_config=llm_config,
+                                     is_termination_msg=is_valid_dict)
+    ranking_agent.register_for_llm(name="get_ranked_listings", description="Sorts the listings based on the scores provided by the description agent.")(get_ranked_listings)
     
     # TODO
     # Fill in the argument to `initiate_chats` below, calling the correct agents sequentially.
@@ -476,6 +502,13 @@ def main(user_query: str):
             "clear_history": True,
             "summary_method": "last_msg",
             "max_turns": 2
+        },
+        {
+            "recipient": ranking_agent,
+            "message": "Call the get_ranked_listings function on the output of the description agent.",
+            "clear_history": True,
+            "summary_method": "last_msg",
+            "max_turns": 1
         },
     ]
     results = entrypoint_agent.initiate_chats(chat_queue)
