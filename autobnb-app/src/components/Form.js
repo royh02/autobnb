@@ -18,6 +18,11 @@ const Form = () => {
     checkIn: "",
     checkOut: "",
     guests: 1,
+    priceMin: "",
+    priceMax: "",
+    bedrooms: 1,
+    bathrooms: 1,
+    additionalInfo: "",
     amenities: [],
     views: [],
   });
@@ -82,6 +87,46 @@ const Form = () => {
         value={formValues.guests}
         onChange={handleChange}
       />
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <FormField
+          label="Min Price"
+          name="priceMin"
+          type="number"
+          value={formValues.priceMin}
+          onChange={handleChange}
+          InputProps={{
+            startAdornment: "$"
+          }}
+        />
+        <FormField
+          label="Max Price"
+          name="priceMax"
+          type="number"
+          value={formValues.priceMax}
+          onChange={handleChange}
+          InputProps={{
+            startAdornment: "$"
+          }}
+        />
+      </Box>
+      <Box sx={{ display: 'flex', gap: 2 }}>
+        <FormField
+          label="Bedrooms"
+          name="bedrooms"
+          type="number"
+          value={formValues.bedrooms}
+          onChange={handleChange}
+          InputProps={{ inputProps: { min: 1 } }}
+        />
+        <FormField
+          label="Bathrooms"
+          name="bathrooms"
+          type="number"
+          value={formValues.bathrooms}
+          onChange={handleChange}
+          InputProps={{ inputProps: { min: 1 } }}
+        />
+      </Box>
       <Box>
         <Typography variant="subtitle1" gutterBottom>
           Amenities
@@ -118,6 +163,22 @@ const Form = () => {
           />
         ))}
       </Box>
+      <Box>
+        <Typography variant="subtitle1" gutterBottom>
+          Additional Details
+        </Typography>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Describe the vibe or any extra details you're looking for
+        </Typography>
+        <FormField
+          name="additionalInfo"
+          value={formValues.additionalInfo}
+          onChange={handleChange}
+          multiline
+          rows={4}
+          fullWidth
+        />
+      </Box>
       <Button type="submit" variant="contained" color="primary" fullWidth>
         Search
       </Button>
@@ -126,3 +187,8 @@ const Form = () => {
 };
 
 export default Form;
+
+// add price range, number of bed and bath
+// additional info large text field, subheader vibe or extra details
+
+// format only default fields as good instruction for web surfer agent, use fedfault search filter mechanism, format as a task

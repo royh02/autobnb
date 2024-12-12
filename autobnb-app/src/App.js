@@ -23,7 +23,7 @@ const App = () => {
         }}
       >
         <Typography variant="h4" component="h1" gutterBottom align="center">
-          Airbnb Query Search
+          AutoBnb: Airbnb Query Search
         </Typography>
         <Form />
       </Box>
