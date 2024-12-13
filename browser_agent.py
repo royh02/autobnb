@@ -37,7 +37,7 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
 
     # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
     await RoundRobinOrchestrator.register(
-        runtime, "orchestrator", lambda: RoundRobinOrchestrator([web_surfer, listing_fetch])
+        runtime, "orchestrator", lambda: RoundRobinOrchestrator([web_surfer, listing_fetch, web_surfer])
     )
 
     runtime.start()
@@ -53,7 +53,7 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
         to_save_screenshots=save_screenshots,
     )
 
-    # await runtime.send_message(RequestReplyMessage(), user_proxy.id)
+    await runtime.send_message(RequestReplyMessage(), listing_fetch.id)
     await runtime.stop_when_idle()
 
 
