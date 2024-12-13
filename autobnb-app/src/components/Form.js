@@ -12,6 +12,30 @@ import FormField from "./FormField";
 const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
 const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
 
+const formatSearchQuery = (formData) => {
+  const structuredData = {
+    location: formData.location,
+    dates: {
+      checkIn: formData.checkIn || null,
+      checkOut: formData.checkOut || null
+    },
+    guests: formData.guests,
+    price: {
+      minimum: formData.priceMin || null,
+      maximum: formData.priceMax || null
+    },
+    rooms: {
+      bedrooms: formData.bedrooms,
+      bathrooms: formData.bathrooms
+    },
+    amenities: formData.amenities,
+    views: formData.views,
+    additionalPreferences: formData.additionalInfo.trim() || null
+  };
+
+  return JSON.stringify(structuredData, null, 2);
+};
+
 const Form = () => {
   const [formValues, setFormValues] = useState({
     location: "",
@@ -42,20 +66,42 @@ const Form = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formValues.location) {
-      alert("Location is mandatory.");
-      return;
+    const query = formatSearchQuery(formValues);
+    
+    try {
+      const response = await fetch('http://localhost:5000/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Search request failed');
+      }
+      
+      const data = await response.json();
+      console.log('Search response:', data);
+    } catch (error) {
+      console.error('Error during search:', error);
     }
-    console.log("Form submitted:", formValues);
   };
 
   return (
     <Box
       component="form"
       onSubmit={handleSubmit}
-      sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        maxWidth: 600,
+        margin: "auto",
+        padding: 2,
+      }}
     >
       <FormField
         label="Location *"
