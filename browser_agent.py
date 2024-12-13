@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import argparse
 
 from autogen_core.application import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
@@ -17,7 +18,7 @@ def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
 
 
-async def main() -> None:
+async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     # Create the runtime.
     runtime = SingleThreadedAgentRuntime()
 
@@ -44,9 +45,12 @@ async def main() -> None:
     actual_surfer = await runtime.try_get_underlying_agent_instance(web_surfer.id, type=MultimodalWebSurfer)
     await actual_surfer.init(
         model_client=client,
-        downloads_folder=os.getcwd(),
+        downloads_folder=logs_dir,
         start_page="https://www.airbnb.com/?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&search_mode=flex_destinations_search&flexible_trip_lengths%5B%5D=one_week&location_search=MIN_MAP_BOUNDS&monthly_start_date=2025-01-01&monthly_length=3&monthly_end_date=2025-04-01&category_tag=Tag%3A5348&price_filter_input_type=2&channel=EXPLORE&date_picker_type=calendar&adults=2&search_type=filter_change&price_filter_num_nights=5&min_bedrooms=2&min_beds=1&amenities%5B%5D=4&amenities%5B%5D=8",
         browser_channel="chromium",
+        headless=True,
+        debug_dir=logs_dir,
+        to_save_screenshots=save_screenshots,
     )
 
     # await runtime.send_message(RequestReplyMessage(), user_proxy.id)
@@ -54,8 +58,21 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run MagenticOne example with log directory.")
+    parser.add_argument("--logs_dir", type=str, required=True, help="Directory to store log files and downloads")
+    parser.add_argument("--hil_mode", action="store_true", default=False, help="Run in human-in-the-loop mode")
+    parser.add_argument(
+        "--save_screenshots", action="store_true", default=False, help="Save additional browser screenshots to file"
+    )
+
+    args = parser.parse_args()
+
+    # Ensure the log directory exists
+    if not os.path.exists(args.logs_dir):
+        os.makedirs(args.logs_dir)
+
     logger = logging.getLogger(EVENT_LOGGER_NAME)
     logger.setLevel(logging.INFO)
-    log_handler = LogHandler()
+    log_handler = LogHandler(filename=os.path.join(args.logs_dir, "log.jsonl"))
     logger.handlers = [log_handler]
-    asyncio.run(main())
+    asyncio.run(main(args.logs_dir, args.hil_mode, args.save_screenshots))
