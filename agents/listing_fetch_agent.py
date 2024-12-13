@@ -114,7 +114,7 @@ class ListingFetchAgent(BaseWorker):
             
             response = """
             Given a list of the following listings, retrieve a hyperlink for each listing and output a numbered list with titles and clickable hyperlinks.
-            Make sure to gather the listings of at least 3 pages."
+            Make sure to gather the listings of at least 3 pages. Do not click into each individual hyperlink. Simply output the list in the format below.
 
             1. [Title of Result 1]  
             Link: [URL]
