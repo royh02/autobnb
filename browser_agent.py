@@ -7,7 +7,7 @@ from autogen_core.application import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
 from autogen_core.base import AgentId, AgentProxy, Subscription
 from autogen_magentic_one.agents.multimodal_web_surfer import MultimodalWebSurfer
-from autogen_magentic_one.agents.orchestrator import RoundRobinOrchestrator
+from autogen_magentic_one.agents.orchestrator import RoundRobinOrchestrator, LedgerOrchestrator
 from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
@@ -36,8 +36,13 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
 
     # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
-    await RoundRobinOrchestrator.register(
-        runtime, "orchestrator", lambda: RoundRobinOrchestrator([web_surfer, listing_fetch, web_surfer])
+    await LedgerOrchestrator.register(
+        runtime, 
+        "orchestrator", 
+        lambda: LedgerOrchestrator(
+            agents=[web_surfer, listing_fetch],
+            model_client=client
+        )
     )
 
     runtime.start()
