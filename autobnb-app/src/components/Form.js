@@ -3,7 +3,6 @@ import {
   Button,
   Box,
   Typography,
-  MenuItem,
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
@@ -71,7 +70,8 @@ const Form = () => {
     const query = formatSearchQuery(formValues);
     
     try {
-      const response = await fetch('http://localhost:5000/search', {
+      console.log('sending...')
+      const response = await fetch('http://localhost:5001/api/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

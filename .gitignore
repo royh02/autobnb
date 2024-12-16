@@ -1,6 +1,8 @@
 .DS_Store
 OAI_CONFIG_LIST.json
 
+node_modules
 autobnb-app/node_modules
+
 __pycache__
 venv
