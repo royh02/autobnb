@@ -17,6 +17,23 @@ from agents.ranking_agent import RankingAgent
 from agents.validation_agent import ListingValidationAgent
 from agents.messages import Message
 
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import asyncio
+
+app = Flask(__name__)
+cors = CORS(app)
+
+@app.route('/api/search', methods=['POST'])
+def search():
+    data = request.json
+    query = data.get('query')
+    
+    print('hihihi', query)
+
+    asyncio.run(main(query, './logs', False, True))
+
+    return jsonify({'message': 'Search request received', 'query': query})
 
 def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
@@ -119,4 +136,9 @@ if __name__ == "__main__":
     logger.setLevel(logging.INFO)
     log_handler = LogHandler(filename=os.path.join(args.logs_dir, "log.jsonl"))
     logger.handlers = [log_handler]
-    asyncio.run(main(args.start_page, args.logs_dir, args.hil_mode, args.save_screenshots))
+
+
+    # server code
+    port = 5001  # Specify the port you want to use
+    print(f"Flask server running on http://localhost:{port}")
+    app.run(debug=True, port=port)

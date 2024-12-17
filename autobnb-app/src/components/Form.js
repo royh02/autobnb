@@ -20,8 +20,8 @@ const formatSearchQuery = (formData) => {
     },
     guests: formData.guests,
     price: {
-      minimum: formData.priceMin || null,
-      maximum: formData.priceMax || null
+      minimum: formData.priceMin || 0,
+      maximum: formData.priceMax || 999999999,
     },
     rooms: {
       bedrooms: formData.bedrooms,
@@ -32,7 +32,8 @@ const formatSearchQuery = (formData) => {
     additionalPreferences: formData.additionalInfo.trim() || null
   };
 
-  return JSON.stringify(structuredData, null, 2);
+  // return JSON.stringify(structuredData, null, 2);
+  return structuredData
 };
 
 const Form = () => {
