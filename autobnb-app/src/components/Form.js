@@ -14,35 +14,35 @@ const amenitiesList = ["WiFi", "Kitchen", "Washer", "Dryer", "Free Parking", "Gy
 // const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
 
 const formatSearchQuery = (formData) => {
-  url = "https://www.airbnb.com/s/" 
-  + formData.location 
-  + "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes"
-  + "&price_filter_input_type=2"
-  + "&channel=EXPLORE"
-  + "&date_picker_type=calendar"
-  + "&checkin=" + str(formData.checkIn)
-  + "&checkout=" + str(formData.checkOut)
-  + formData.guests.adults ? ("&adults=" + str(formData.guests.adults)) : ""
-  + formData.guests.children ? ("&children=" + str(formData.guests.adults)) : ""
-  + formData.guests.infants ? ("&infants=" + str(formData.guests.infants)) : ""
-  + formData.guests.pets ? ("&pets=" + str(formData.guests.pets)) : ""
-  + "&source=structured_search_input_header"
-  + "&search_type=filter_change"
-  + "&search_mode=regular_search"
-  + "&price_min=" + str(formData.priceMin)
-  + "&price_max=" + str(formData.priceMax)
-  + "&min_bedrooms=" + str(formData.bedrooms)
-  + "&min_bathrooms=" + str(formData.bathRooms)
-  + formData.amenities.contains("Wifi") ? ("&amenities%5B%5D=4") : ""
-  + formData.amenities.contains("Kitchen") ? ("&amenities%5B%5D=8") : ""
-  + formData.amenities.contains("Washer") ? ("&amenities%5B%5D=33") : ""
-  + formData.amenities.contains("Dryer") ? ("&amenities%5B%5D=34") : ""
-  + formData.amenities.contains("Free Parking") ? ("&amenities%5B%5D=9") : ""
-  + formData.amenities.contains("Gym") ? ("&amenities%5B%5D=15") : ""
-  + formData.amenities.contains("Pool") ? ("&amenities%5B%5D=7") : ""
-  + formData.guests.pets ? ("&selected_filter_order%5B%5D=pets%3A1") : ""
+  const url = "https://www.airbnb.com/s/" 
+    + formData.location 
+    + "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes"
+    + "&price_filter_input_type=2"
+    + "&channel=EXPLORE"
+    + "&date_picker_type=calendar"
+    + "&checkin=" + formData.checkIn.toString()
+    + "&checkout=" + formData.checkOut.toString()
+    + formData.guests.adults ? ("&adults=" + formData.guests.adults.toString()) : ""
+    + formData.guests.children ? ("&children=" + formData.guests.adults.toString()) : ""
+    + formData.guests.infants ? ("&infants=" + formData.guests.infants.toString()) : ""
+    + formData.guests.pets ? ("&pets=" + formData.guests.pets.toString()) : ""
+    + "&source=structured_search_input_header"
+    + "&search_type=filter_change"
+    + "&search_mode=regular_search"
+    + "&price_min=" + formData.priceMin.toString()
+    + "&price_max=" + formData.priceMax.toString()
+    + "&min_bedrooms=" + formData.bedrooms.toString()
+    + "&min_bathrooms=" + formData.bathRooms.toString()
+    + formData.amenities.contains("Wifi") ? ("&amenities%5B%5D=4") : ""
+    + formData.amenities.contains("Kitchen") ? ("&amenities%5B%5D=8") : ""
+    + formData.amenities.contains("Washer") ? ("&amenities%5B%5D=33") : ""
+    + formData.amenities.contains("Dryer") ? ("&amenities%5B%5D=34") : ""
+    + formData.amenities.contains("Free Parking") ? ("&amenities%5B%5D=9") : ""
+    + formData.amenities.contains("Gym") ? ("&amenities%5B%5D=15") : ""
+    + formData.amenities.contains("Pool") ? ("&amenities%5B%5D=7") : ""
+    + formData.guests.pets ? ("&selected_filter_order%5B%5D=pets%3A1") : ""
 
-  additionalInfo = formData.additionalInfo
+  const additionalInfo = formData.additionalInfo
   
   return additionalInfo + "___" + url
 };
