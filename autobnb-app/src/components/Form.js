@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 import FormField from "./FormField";
 
-const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
+// const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
+const amenitiesList = ["WiFi", "Indoor Fireplace", "Washer", "Heating", "Kitchen", "Dryer"]
 const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
 
 const formatSearchQuery = (formData) => {
@@ -19,7 +20,12 @@ const formatSearchQuery = (formData) => {
       checkIn: formData.checkIn || null,
       checkOut: formData.checkOut || null
     },
-    guests: formData.guests,
+    guests: {
+      adults: formData.adults || 0,
+      children: formData.children || 0,
+      infants: formData.infants || 0,
+      pets: formData.pets || 0
+    },
     price: {
       minimum: formData.priceMin || 0,
       maximum: formData.priceMax || 999999999,
@@ -172,20 +178,65 @@ const Form = () => {
               boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             }}
           />
-          <FormField
-            label="Number of Guests"
-            name="guests"
-            type="number"
-            value={formValues.guests}
-            onChange={handleChange}
-            sx={{
-              borderRadius: "8px",
-              padding: "10px",
-              backgroundColor: "#f7f7f7",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-            }}
-          />
-          
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <FormField
+              label="Adults"
+              name="guests.adults"
+              type="number"
+              value={formValues.guests.adults}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <FormField
+              label="Children"
+              name="guests.children"
+              type="number"
+              value={formValues.guests.children}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <FormField
+              label="Infants"
+              name="guests.infants"
+              type="number"
+              value={formValues.guests.infants}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <FormField
+              label="Pets"
+              name="guests.pets"
+              type="number"
+              value={formValues.guests.pets}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </Box>
+
           <Box sx={{ display: 'flex', gap: 2 }}>
             <FormField
               label="Min Price"
