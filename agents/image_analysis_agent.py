@@ -11,7 +11,14 @@ from autogen_magentic_one.messages import (
 )
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
-from openai import AsyncOpenAI
+
+from itertools import zip_longest
+from pydantic import BaseModel
+import json
+
+class ImageInput(BaseModel):
+    criteria: str
+    image_urls: list[str]
 
 @default_subscription
 class ImageAnalysisAgent(BaseWorker):
@@ -41,17 +48,42 @@ class ImageAnalysisAgent(BaseWorker):
         
         try:
             # Prepare context from chat history
-            # context = " ".join([str(msg.content) for msg in self._chat_history[-3:]])
-            criteria = ...
-            image_urls = ...
-            
-            response = await self._score_images(criteria, image_urls)
+            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            criteria, image_urls = self._parse_context(context)
+            image_scores = await self._score_images(criteria, image_urls)
+            response = f"Here are the image scores: {image_scores}"
             return False, response
         
         except Exception as e:
             return False, f"Error: {str(e)}"
 
-    async def _score_images(criteria: str, image_urls: list[list[str]]) -> list[int]:
+    async def _parse_context(self, context: str):
+        # Prepare the system prompt
+        prompt = f"""
+        Your task is to parse the chat history and extract a dictionary with two fields:  
+
+        1. **criteria**: A string containing the user's preferences.
+        2. **image_urls**: A list of image urls returned by
+
+        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
+
+        Chat history:
+        {context}
+        """.strip()
+
+        # Call the OpenAI API
+        response = await self._client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format=ImageInput,
+        )
+
+        image_input = response.choices[0].message.parsed
+        criteria = image_input.criteria
+        image_urls = image_input.image_urls
+        return criteria, image_urls
+    
+    async def _score_images(self, criteria: str, image_urls: list[list[str]]) -> list[int]:
         """
         Takes in a list of lists of image URLs, each list corresponding to one listing,
         and scores the listings based on how well the images match the user's criteria.
@@ -63,9 +95,6 @@ class ImageAnalysisAgent(BaseWorker):
         Returns:
             list[int]: A list of integers representing scores for each listing.
         """
-        # Initialize the OpenAI client
-        client = AsyncOpenAI() # TODO: set api key
-
         # Prepare the system prompt
         system_prompt = f"""
         Your task is to score an Airbnb listing based on how well the images of the listing match the user's criteria.
@@ -96,10 +125,10 @@ class ImageAnalysisAgent(BaseWorker):
                 )
 
             # Call the OpenAI API
-            response = await client.chat.completions.create(
+            response = await self._client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                max_tokens=10,  # Small token limit since we expect a single number as output
+                max_tokens=10,
                 temperature=0.9,
             )
 
