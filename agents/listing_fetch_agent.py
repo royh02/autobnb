@@ -72,22 +72,45 @@ class ListingFetchAgent(BaseWorker):
         try:
             # Get the latest user prompt from chat history
             
-            response = """
-            Given a URL link with the inputted search criteria, retrive a list of hyperlinks containing each individual listing.
-            Use the helper function extract_airbnb_listing_links(url) and replace url with the corresponding URL.
+            # response = """
+            # Given a URL link with the inputted search criteria, retrive a list of hyperlinks containing each individual listing.
+            # Use the helper function extract_airbnb_listing_links(url) and replace url with the corresponding URL.
 
-            Simply output the list in the format below.
+            # Simply output the list in the format below.
 
-            1. [URL]
-            2. [URL]
-            ...
+            # 1. [URL]
+            # 2. [URL]
+            # ...
 
-            """
-            
+            # """
+            # Prepare context from chat history
+            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            extracted_url = self._parse_context(context)
+            listing_urls = extract_airbnb_listing_links(extracted_url)
+            response = f"Here are the listing urls: {listing_urls}"
             return False, response
+
 
         except Exception as e:
             return False, f"Error fetching listings: {str(e)}"
+
+    async def _parse_context(self, context: str):
+        # Prepare the system prompt
+        prompt = f"""
+        Your task is to parse the chat history and extract a string containing the URL of the Airbnb website.
+
+        Chat history:
+        {context}
+        """.strip()
+
+        # Call the OpenAI API
+        response = await self._openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        extracted_url = response.choices[0].message['content'].strip()
+        return extracted_url 
 
     async def ainput(self, prompt: str) -> str:
         """
