@@ -12,6 +12,7 @@ from autogen_magentic_one.messages import (
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 from pydantic import BaseModel
+from openai import AsyncOpenAI
 
 class ImageInput(BaseModel):
     criteria: str
@@ -30,6 +31,7 @@ class ImageAnalysisAgent(BaseWorker):
     ) -> None:
         super().__init__(description)
         self._client = client
+        self._openai_client = AsyncOpenAI()
     
     async def _generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
         """
@@ -60,7 +62,7 @@ class ImageAnalysisAgent(BaseWorker):
         Your task is to parse the chat history and extract a dictionary with two fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **image_urls**: A list of image urls returned by
+        2. **image_urls**: A list of image urls returned by the browser agent.
 
         If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
 
@@ -69,7 +71,7 @@ class ImageAnalysisAgent(BaseWorker):
         """.strip()
 
         # Call the OpenAI API
-        response = await self._client.chat.completions.create(
+        response = await self._openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             response_format=ImageInput,
@@ -122,7 +124,7 @@ class ImageAnalysisAgent(BaseWorker):
                 )
 
             # Call the OpenAI API
-            response = await self._client.chat.completions.create(
+            response = await self._openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
                 max_tokens=10,

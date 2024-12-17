@@ -55,8 +55,8 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
     await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
     web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
 
-    await UserProxy.register(runtime, "UserProxy", UserProxy)
-    user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
+    # await UserProxy.register(runtime, "UserProxy", UserProxy)
+    # user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
 
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)

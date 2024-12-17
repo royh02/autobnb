@@ -13,6 +13,7 @@ from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 from itertools import zip_longest
 from pydantic import BaseModel
+from openai import AsyncOpenAI
 
 class RankingInput(BaseModel):
     listings: list[str]
@@ -32,6 +33,7 @@ class RankingAgent(BaseWorker):
     ) -> None:
         super().__init__(description)
         self._client = client
+        self._openai_client = AsyncOpenAI()
     
     async def _generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
         """
@@ -73,7 +75,7 @@ class RankingAgent(BaseWorker):
         """.strip()
 
         # Call the OpenAI API
-        response = await self._client.chat.completions.create(
+        response = await self._openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             response_format=RankingInput,

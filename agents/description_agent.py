@@ -13,6 +13,7 @@ from autogen_magentic_one.messages import (
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 from pydantic import BaseModel
+from openai import AsyncOpenAI
 
 class DescriptionInput(BaseModel):
     criteria: str
@@ -32,6 +33,7 @@ class DescriptionAgent(BaseWorker):
     ) -> None:
         super().__init__(description)
         self._client = client
+        self._openai_client = AsyncOpenAI()
 
     async def _generate_reply(
         self, 
@@ -68,7 +70,7 @@ class DescriptionAgent(BaseWorker):
         Your task is to parse the chat history and extract a dictionary with two fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **image_urls**: A list of image urls returned by
+        2. **descriptions**: A list of Airbnb listing descriptions output by the browser agent.
 
         If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
 
@@ -77,7 +79,7 @@ class DescriptionAgent(BaseWorker):
         """.strip()
 
         # Call the OpenAI API
-        response = await self._client.chat.completions.create(
+        response = await self._openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             response_format=DescriptionInput,
@@ -85,8 +87,8 @@ class DescriptionAgent(BaseWorker):
 
         image_input = response.choices[0].message.parsed
         criteria = image_input.criteria
-        image_urls = image_input.image_urls
-        return criteria, image_urls
+        descriptions = descriptions.image_urls
+        return criteria, descriptions
 
     async def _score_listings(
         self, 
@@ -136,8 +138,7 @@ class DescriptionAgent(BaseWorker):
         listings_str = ""
         for i, listing in enumerate(descriptions, start=1):
             listings_str += f"Listing {i}:\n"
-            for k, v in listing.items():
-                listings_str += f"{k}: {v}\n"
+            listings_str += f"{listing}\n"
             listings_str += "\n"
 
         messages = [
@@ -145,7 +146,7 @@ class DescriptionAgent(BaseWorker):
             {"role": "user", "content": listings_str},
         ]
 
-        response = await self._client.chat.completions.create(
+        response = await self._openai_client.chat.completions.create(
             model="gpt-4o-mini", 
             messages=messages,
             max_tokens=50,
