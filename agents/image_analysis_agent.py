@@ -1,7 +1,8 @@
 import asyncio
 from typing import Tuple
-from autogen_core import CancellationToken, default_subscription
-from autogen_core import MessageContext, TopicId
+from autogen_core.base import CancellationToken
+from autogen_core.components import default_subscription
+# from autogen_core import MessageContext, TopicId
 from autogen_magentic_one.messages import (
     BroadcastMessage,
     RequestReplyMessage,
@@ -26,7 +27,7 @@ class ImageAnalysisAgent(BaseWorker):
         super().__init__(description)
         self._client = client
     
-    async def generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
+    async def _generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
         """
         Generate a reply.
         

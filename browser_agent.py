@@ -12,32 +12,41 @@ from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
 from agents.listing_fetch_agent import ListingFetchAgent
+from agents.image_analysis_agent import ImageAnalysisAgent
+from agents.ranking_agent import RankingAgent
 from agents.validation_agent import ListingValidationAgent
+from agents.messages import Message
 
 
 def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
 
 
-async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
+async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     # Create the runtime.
     runtime = SingleThreadedAgentRuntime()
 
     # Create an appropriate client
-    client = create_completion_client_from_env(model="gpt-4o")
+    client = create_completion_client_from_env(model="gpt-4o-mini")
 
     # Register agents.
     await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
     web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
 
-    # await UserProxy.register(runtime, "UserProxy", UserProxy)
-    # user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
+    await UserProxy.register(runtime, "UserProxy", UserProxy)
+    user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
 
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
 
     await ListingValidationAgent.register(runtime, "ListingValidationAgent", ListingValidationAgent)
     listing_validator = AgentProxy(AgentId("ListingValidationAgent", "default"), runtime)
+
+    await ImageAnalysisAgent.register(runtime, "ImageAnalysisAgent", ImageAnalysisAgent)
+    image_analysis = AgentProxy(AgentId("ImageAnalysisAgent", "default"), runtime)
+
+    await RankingAgent.register(runtime, "RankingAgent", RankingAgent)
+    ranking_agent = AgentProxy(AgentId("RankingAgent", "default"), runtime)
     
 
     # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
@@ -45,10 +54,12 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch, listing_validator],
+            agents=[web_surfer, listing_fetch, user_proxy, listing_validator, image_analysis, ranking_agent],
             model_client=client
         )
     )
+
+    orchestrator = AgentProxy(AgentId("orchestrator", "default"), runtime)
 
     runtime.start()
 
@@ -56,29 +67,33 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     await actual_surfer.init(
         model_client=client,
         downloads_folder=logs_dir,
-        start_page="https://www.airbnb.com/?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes&search_mode=flex_destinations_search&flexible_trip_lengths%5B%5D=one_week&location_search=MIN_MAP_BOUNDS&monthly_start_date=2025-01-01&monthly_length=3&monthly_end_date=2025-04-01&category_tag=Tag%3A5348&price_filter_input_type=2&channel=EXPLORE&date_picker_type=calendar&adults=2&search_type=filter_change&price_filter_num_nights=5&min_bedrooms=2&min_beds=1&amenities%5B%5D=4&amenities%5B%5D=8",
+        start_page=start_page,
         browser_channel="chromium",
         headless=True,
         debug_dir=logs_dir,
         to_save_screenshots=save_screenshots,
     )
 
-    initial_response = await runtime.send_message(RequestReplyMessage(), listing_fetch.id)
+    message = Message(content="I want an airbnb in Berkeley")
 
-    if initial_response:
-        # listing fetch agent returns the listings and user criteria?
-        listings_data = initial_response.content.get("listings", [])
-        user_criteria = initial_response.content.get("criteria", {})
-        
-        # Send to validation agent
-        validation_msg = RequestReplyMessage()
-        validation_msg.content = {
-            "listing_criteria": user_criteria,
-            "search_results": listings_data
-        }
-        await runtime.send_message(validation_msg, listing_validator.id)
-    
+    await runtime.send_message(RequestReplyMessage(), user_proxy.id)
+    # await runtime.send_message(message, orchestrator.id)
     await runtime.stop_when_idle()
+
+# def send_prompt():
+#     user_prompt = request.json.get("prompt")
+#     if not user_prompt:
+#         return jsonify({"error": "Missing 'prompt' in request"}), 400
+
+#     # Send the user prompt to the orchestrator
+#     asyncio.run(_send_message_to_orchestrator(user_prompt))
+#     return jsonify({"status": "Prompt sent to orchestrator successfully!"})
+
+# async def _send_message_to_orchestrator(runtime, orchestrator, user_prompt: str):
+#     """Send an initial message to the orchestrator."""
+#     message = RequestReplyMessage(content=user_prompt, sender="User", receiver=orchestrator.id)
+#     await runtime.send_message(message, orchestrator.id)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run MagenticOne example with log directory.")
@@ -86,6 +101,12 @@ if __name__ == "__main__":
     parser.add_argument("--hil_mode", action="store_true", default=False, help="Run in human-in-the-loop mode")
     parser.add_argument(
         "--save_screenshots", action="store_true", default=False, help="Save additional browser screenshots to file"
+    )
+    parser.add_argument(
+        "--start_page",
+        type=str,
+        default="https://www.airbnb.com/",
+        help="The start page for the web surfer",
     )
 
     args = parser.parse_args()
@@ -98,4 +119,4 @@ if __name__ == "__main__":
     logger.setLevel(logging.INFO)
     log_handler = LogHandler(filename=os.path.join(args.logs_dir, "log.jsonl"))
     logger.handlers = [log_handler]
-    asyncio.run(main(args.logs_dir, args.hil_mode, args.save_screenshots))
+    asyncio.run(main(args.start_page, args.logs_dir, args.hil_mode, args.save_screenshots))

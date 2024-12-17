@@ -6,3 +6,9 @@ autobnb-app/node_modules
 
 __pycache__
 venv
+
+agents/__pycache__/
+
+logs
+
+package-lock.json
