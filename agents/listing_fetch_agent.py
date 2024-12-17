@@ -13,6 +13,7 @@ from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 def extract_airbnb_listing_links(url):
     try:
