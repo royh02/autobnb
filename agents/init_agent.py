@@ -38,7 +38,14 @@ class InitAgent(BaseWorker):
             # Get the latest user prompt from chat history
 
             with open('user_request.txt', 'r') as file:
-                response = file.read()
+                user_input = file.read()
+            
+            response = f"""
+            The web surfer agent will be started on a Airbnb page with potential listings.
+            Given the user input, use the agents at disposal to achieve the user input's specified goal.
+
+            ### User input: {user_input}
+            """
             
             return False, response
 
