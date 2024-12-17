@@ -10,35 +10,41 @@ import {
 import FormField from "./FormField";
 
 // const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
-const amenitiesList = ["WiFi", "Indoor Fireplace", "Washer", "Heating", "Kitchen", "Dryer"]
-const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
+const amenitiesList = ["WiFi", "Kitchen", "Washer", "Dryer", "Free Parking", "Gym", "Pool"]
+// const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
 
 const formatSearchQuery = (formData) => {
-  const structuredData = {
-    location: formData.location,
-    dates: {
-      checkIn: formData.checkIn || null,
-      checkOut: formData.checkOut || null
-    },
-    guests: {
-      adults: formData.adults || 0,
-      children: formData.children || 0,
-      infants: formData.infants || 0,
-      pets: formData.pets || 0
-    },
-    price: {
-      minimum: formData.priceMin || 0,
-      maximum: formData.priceMax || 999999999,
-    },
-    rooms: {
-      bedrooms: formData.bedrooms,
-      bathrooms: formData.bathrooms
-    },
-    amenities: formData.amenities,
-    views: formData.views,
-    additionalPreferences: formData.additionalInfo.trim() || null
-  };
-  return structuredData;
+  url = "https://www.airbnb.com/s/" 
+  + formData.location 
+  + "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes"
+  + "&price_filter_input_type=2"
+  + "&channel=EXPLORE"
+  + "&date_picker_type=calendar"
+  + "&checkin=" + str(formData.checkIn)
+  + "&checkout=" + str(formData.checkOut)
+  + formData.guests.adults ? ("&adults=" + str(formData.guests.adults)) : ""
+  + formData.guests.children ? ("&children=" + str(formData.guests.adults)) : ""
+  + formData.guests.infants ? ("&infants=" + str(formData.guests.infants)) : ""
+  + formData.guests.pets ? ("&pets=" + str(formData.guests.pets)) : ""
+  + "&source=structured_search_input_header"
+  + "&search_type=filter_change"
+  + "&search_mode=regular_search"
+  + "&price_min=" + str(formData.priceMin)
+  + "&price_max=" + str(formData.priceMax)
+  + "&min_bedrooms=" + str(formData.bedrooms)
+  + "&min_bathrooms=" + str(formData.bathRooms)
+  + formData.amenities.contains("Wifi") ? ("&amenities%5B%5D=4") : ""
+  + formData.amenities.contains("Kitchen") ? ("&amenities%5B%5D=8") : ""
+  + formData.amenities.contains("Washer") ? ("&amenities%5B%5D=33") : ""
+  + formData.amenities.contains("Dryer") ? ("&amenities%5B%5D=34") : ""
+  + formData.amenities.contains("Free Parking") ? ("&amenities%5B%5D=9") : ""
+  + formData.amenities.contains("Gym") ? ("&amenities%5B%5D=15") : ""
+  + formData.amenities.contains("Pool") ? ("&amenities%5B%5D=7") : ""
+  + formData.guests.pets ? ("&selected_filter_order%5B%5D=pets%3A1") : ""
+
+  additionalInfo = formData.additionalInfo
+  
+  return additionalInfo + "___" + url
 };
 
 const Form = () => {
@@ -53,7 +59,6 @@ const Form = () => {
     bathrooms: 1,
     additionalInfo: "",
     amenities: [],
-    views: [],
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -336,44 +341,6 @@ const Form = () => {
                     />
                   }
                   label={amenity}
-                />
-              ))}
-            </Box>
-          </Box>
-
-          <Box>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
-              Views
-            </Typography>
-            <Box sx={{
-                borderRadius: "8px",
-                padding: "10px",
-                backgroundColor: "#f7f7f7",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              }}>
-
-              {viewsList.map((view, index) => (
-                <FormControlLabel
-                  key={view}
-                  control={
-                    <Checkbox
-                      id={`view-${index}`}
-                      name="views" 
-                      value={view}
-                      checked={formValues.views.includes(view)}
-                      onChange={(e) => handleCheckboxChange(e, "views")}
-                      sx={{
-                        color: "#444",
-                        '&.Mui-checked': {
-                          color: "#FF5A5F",
-                        },
-                        backgroundColor: "#f7f7f7",
-                        borderRadius: "4px",
-                        padding: "6px", 
-                      }}
-                    />
-                  }
-                  label={view}
                 />
               ))}
             </Box>
