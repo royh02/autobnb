@@ -11,10 +11,8 @@ from autogen_magentic_one.messages import (
 )
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
-
 from itertools import zip_longest
 from pydantic import BaseModel
-import json
 
 class RankingInput(BaseModel):
     listings: list[str]

@@ -12,10 +12,14 @@ from autogen_magentic_one.messages import (
 )
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
+from pydantic import BaseModel
 
+class DescriptionInput(BaseModel):
+    criteria: str
+    descriptions: list[str]
 
 @default_subscription
-class ListingValidationAgent(BaseWorker):
+class DescriptionAgent(BaseWorker):
     """An agent that validates Airbnb listings against user criteria and returns scores as a list of integers 1-5."""
 
     DEFAULT_DESCRIPTION = """You are a validation assistant that scores Airbnb listings based on user criteria.
@@ -31,8 +35,6 @@ class ListingValidationAgent(BaseWorker):
 
     async def _generate_reply(
         self, 
-        listing_criteria: Dict,
-        search_results: List[Dict],
         cancellation_token: CancellationToken
     ) -> Tuple[bool, UserContent]:
         """
@@ -40,7 +42,7 @@ class ListingValidationAgent(BaseWorker):
         
         Args:
             listing_criteria: Dictionary containing user's search preferences
-            search_results: List of dictionaries containing found listings
+            descriptions: List of dictionaries containing found listings
             cancellation_token: Token to check for cancellation
         
         Returns:
@@ -51,15 +53,45 @@ class ListingValidationAgent(BaseWorker):
             return False, "No model client available. Please provide a valid client."
 
         try:
-            scores = await self._score_listings(listing_criteria, search_results)
-            return False, str(scores)  # Convert list to string for UserContent
+            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            criteria, descriptions = self._parse_context(context)
+            description_scores = await self._score_listings(criteria, descriptions)
+            response = f"Here are the description scores: {description_scores}"
+            return False, response
+
         except Exception as e:
             return False, f"Error validating listings: {str(e)}"
 
+    async def _parse_context(self, context: str):
+        # Prepare the system prompt
+        prompt = f"""
+        Your task is to parse the chat history and extract a dictionary with two fields:  
+
+        1. **criteria**: A string containing the user's preferences.
+        2. **image_urls**: A list of image urls returned by
+
+        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
+
+        Chat history:
+        {context}
+        """.strip()
+
+        # Call the OpenAI API
+        response = await self._client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            response_format=DescriptionInput,
+        )
+
+        image_input = response.choices[0].message.parsed
+        criteria = image_input.criteria
+        image_urls = image_input.image_urls
+        return criteria, image_urls
+
     async def _score_listings(
         self, 
-        listing_criteria: Dict, 
-        search_results: List[Dict]
+        criteria: str, 
+        descriptions: List[str]
     ) -> List[int]:
         """
         Uses a model to score the listings based on the given criteria.
@@ -67,7 +99,7 @@ class ListingValidationAgent(BaseWorker):
 
         Args:
             listing_criteria (Dict): The user's criteria
-            search_results (List[Dict]): A list of listing dictionaries
+            descriptions (List[Dict]): A list of listing dictionaries
 
         Returns:
             List[int]: A list of integers representing scores for each listing
@@ -76,7 +108,7 @@ class ListingValidationAgent(BaseWorker):
         system_prompt = f"""
         You are a validation assistant. Given user criteria and Airbnb listings, you must:
 
-        1. Evaluate how well each listing meets the given user criteria. Consider the user’s preferences as a set of desired attributes, such as location, travel dates, the number of guests, price range, number of bedrooms and bathrooms, amenities (like a kitchen, pool, or WiFi), views (like ocean or garden views), and any additional details the user may have provided.
+        1. Evaluate how well each listing meets the given user criteria. Consider the user's preferences as a set of desired attributes, such as location, travel dates, the number of guests, price range, number of bedrooms and bathrooms, amenities (like a kitchen, pool, or WiFi), views (like ocean or garden views), and any additional details the user may have provided.
 
         For example:
         - Location: If the user wants a rental in Paris, then listings in Paris should score higher than those outside the city.
@@ -97,12 +129,12 @@ class ListingValidationAgent(BaseWorker):
         [3,5,2]
 
         User criteria:
-        {listing_criteria}
+        {criteria}
         """.strip()
 
         # Add listings as a user message
         listings_str = ""
-        for i, listing in enumerate(search_results, start=1):
+        for i, listing in enumerate(descriptions, start=1):
             listings_str += f"Listing {i}:\n"
             for k, v in listing.items():
                 listings_str += f"{k}: {v}\n"
