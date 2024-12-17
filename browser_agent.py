@@ -12,6 +12,7 @@ from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
 from agents.listing_fetch_agent import ListingFetchAgent
+from agents.validation_agent import ListingValidationAgent
 
 
 def create_websurfer_subscription() -> Subscription:
@@ -35,12 +36,16 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
 
+    await ListingValidationAgent.register(runtime, "ListingValidationAgent", ListingValidationAgent)
+    listing_validator = AgentProxy(AgentId("ListingValidationAgent", "default"), runtime)
+    
+
     # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
     await LedgerOrchestrator.register(
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch],
+            agents=[web_surfer, listing_fetch, listing_validator],
             model_client=client
         )
     )
@@ -58,9 +63,22 @@ async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
         to_save_screenshots=save_screenshots,
     )
 
-    await runtime.send_message(RequestReplyMessage(), listing_fetch.id)
-    await runtime.stop_when_idle()
+    initial_response = await runtime.send_message(RequestReplyMessage(), listing_fetch.id)
 
+    if initial_response:
+        # listing fetch agent returns the listings and user criteria?
+        listings_data = initial_response.content.get("listings", [])
+        user_criteria = initial_response.content.get("criteria", {})
+        
+        # Send to validation agent
+        validation_msg = RequestReplyMessage()
+        validation_msg.content = {
+            "listing_criteria": user_criteria,
+            "search_results": listings_data
+        }
+        await runtime.send_message(validation_msg, listing_validator.id)
+    
+    await runtime.stop_when_idle()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run MagenticOne example with log directory.")
