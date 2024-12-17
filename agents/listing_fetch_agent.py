@@ -14,6 +14,35 @@ from autogen_magentic_one.agents.base_worker import BaseWorker
 import requests
 from bs4 import BeautifulSoup
 
+def extract_airbnb_listing_links(url):
+    try:
+        # Step 1: Fetch HTML content from the Airbnb page
+        response = requests.get(url)
+        response.raise_for_status()
+        html_content = response.text
+        
+        # Step 2: Parse HTML with BeautifulSoup
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Step 3: Find all `<a>` tags and filter for listing links
+        base_url = "https://www.airbnb.com"  # Base URL for constructing full links
+        listings = []
+        for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href']
+            if "/rooms/" in href:  # Listing URLs contain '/rooms/'
+                full_url = urljoin(base_url, href)  # Construct full URL
+                listings.append(full_url)
+        
+        # Step 4: Format and output the result
+        formatted_list = [
+            f"{i + 1}. {url}" for i, url in enumerate(listings)
+        ]
+        return "\n\n".join(formatted_list)
+    except requests.exceptions.RequestException as e:
+        return f"Error fetching page: {e}"
+    except Exception as e:
+        return f"Error processing HTML: {e}"
+
 @default_subscription
 class ListingFetchAgent(BaseWorker):
     """An agent that processes user input and fetches Airbnb listings."""
