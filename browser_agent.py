@@ -7,10 +7,11 @@ from autogen_core import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
 from autogen_core.base import AgentId, AgentProxy, Subscription
 from autogen_magentic_one.agents.multimodal_web_surfer import MultimodalWebSurfer
-from autogen_magentic_one.agents.orchestrator import RoundRobinOrchestrator, LedgerOrchestrator
+from autogen_magentic_one.agents.orchestrator import LedgerOrchestrator
 from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
+from agents.init_agent import InitAgent
 from agents.listing_fetch_agent import ListingFetchAgent
 from agents.image_analysis_agent import ImageAnalysisAgent
 from agents.ranking_agent import RankingAgent
@@ -28,10 +29,15 @@ cors = CORS(app)
 def search():
     data = request.json
     query = data.get('query')
+    start_page = data.get('start_page')
     
     print('hihihi', query)
 
-    asyncio.run(main(query, './logs', False, True))
+    file_path = 'user_request.txt'
+    with open(file_path, 'w') as file:
+        file.write(query)
+
+    asyncio.run(main(start_page, './logs', False, True))
 
     return jsonify({'message': 'Search request received', 'query': query})
 
@@ -64,19 +70,20 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
 
     await RankingAgent.register(runtime, "RankingAgent", RankingAgent)
     ranking_agent = AgentProxy(AgentId("RankingAgent", "default"), runtime)
-    
+
+    await InitAgent.register(runtime, "InitAgent", InitAgent)
+    init_agent = AgentProxy(AgentId("InitAgent", "default"), runtime)
+
 
     # to add additonal agents to the round robin orchestrator, add them to the list below after user_proxy
     await LedgerOrchestrator.register(
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch, user_proxy, listing_validator, image_analysis, ranking_agent],
+            agents=[web_surfer, listing_fetch, init_agent, listing_validator, image_analysis, ranking_agent],
             model_client=client
         )
     )
-
-    orchestrator = AgentProxy(AgentId("orchestrator", "default"), runtime)
 
     runtime.start()
 
@@ -91,9 +98,7 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         to_save_screenshots=save_screenshots,
     )
 
-    message = Message(content="I want an airbnb in Berkeley")
-
-    await runtime.send_message(RequestReplyMessage(), user_proxy.id)
+    await runtime.send_message(RequestReplyMessage(), init_agent.id)
     # await runtime.send_message(message, orchestrator.id)
     await runtime.stop_when_idle()
 
