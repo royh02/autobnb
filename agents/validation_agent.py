@@ -1,4 +1,5 @@
 import asyncio
+import json
 from typing import Tuple, Dict, List
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
@@ -12,17 +13,18 @@ from autogen_magentic_one.messages import (
 from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 
+
 @default_subscription
 class ListingValidationAgent(BaseWorker):
-    """An agent that validates Airbnb listings against user criteria and provides matching scores."""
+    """An agent that validates Airbnb listings against user criteria and returns scores as a list of integers 1-5."""
 
-    DEFAULT_DESCRIPTION = """You are the validation agent responsible for analyzing Airbnb listings 
-    and comparing them against user requirements to generate matching scores on a scale of 1-5."""
+    DEFAULT_DESCRIPTION = """You are a validation assistant that scores Airbnb listings based on user criteria.
+    You will only output a JSON array of integers corresponding to each listing's score (1-5) with no additional text."""
 
     def __init__(
         self,
         description: str = DEFAULT_DESCRIPTION,
-        client=None,  # Optional client for extended functionality
+        client=None,  
     ) -> None:
         super().__init__(description)
         self._client = client
@@ -34,7 +36,7 @@ class ListingValidationAgent(BaseWorker):
         cancellation_token: CancellationToken
     ) -> Tuple[bool, UserContent]:
         """
-        Generate validation scores for listings based on user criteria.
+        Generate validation scores for listings based on user criteria using a model.
         
         Args:
             listing_criteria: Dictionary containing user's search preferences
@@ -42,110 +44,91 @@ class ListingValidationAgent(BaseWorker):
             cancellation_token: Token to check for cancellation
         
         Returns:
-            Tuple[bool, UserContent]: Indicates if process should halt and the validation results
+            Tuple[bool, UserContent]: Indicates if process should halt and the validation results (as a list of integers)
         """
-        try:
-            validation_scores = self._validate_listing_data(listing_criteria, search_results)
-            
-            # Format the response with scores and explanations
-            response = "Listing Match Scores:\n\n"
-            for idx, score in enumerate(validation_scores):
-                listing = search_results[idx]
-                response += f"Listing {idx + 1}: {score}/5 stars\n"
-                response += f"Location: {listing.get('Location', 'N/A')}\n"
-                response += f"Price: ${listing.get('Price', 'N/A')}\n"
-                response += f"Rooms: {listing.get('Number of rooms', 'N/A')}\n"
-                response += f"Amenities: {', '.join(listing.get('Amenities', []))}\n\n"
-            
-            return False, response
+        # If no client is provided, return a placeholder response
+        if not self._client:
+            return False, "No model client available. Please provide a valid client."
 
+        try:
+            scores = await self._score_listings(listing_criteria, search_results)
+            return False, str(scores)  # Convert list to string for UserContent
         except Exception as e:
             return False, f"Error validating listings: {str(e)}"
 
-    def _validate_listing_data(
+    async def _score_listings(
         self, 
         listing_criteria: Dict, 
         search_results: List[Dict]
     ) -> List[int]:
-        """Core validation logic that assigns scores to listings."""
-        def parse_price(price_str):
-            if isinstance(price_str, (int, float)):
-                return float(price_str)
-            if not price_str:
-                return None
-            return float(price_str.replace("$", ""))
+        """
+        Uses a model to score the listings based on the given criteria.
+        The model is instructed to return a JSON array of integers (1-5) only.
 
-        # Extract user's criteria
-        user_location = listing_criteria.get("Location", "").strip()
-        user_dates = listing_criteria.get("Travel dates", {})
-        user_check_in = user_dates.get("Check-in", "")
-        user_check_out = user_dates.get("Check-out", "")
-        user_price_range = listing_criteria.get("Price range", {})
-        user_min_price = parse_price(user_price_range.get("Minimum", ""))
-        user_max_price = parse_price(user_price_range.get("Maximum", ""))
-        user_property_type = listing_criteria.get("Property type", "").strip()
-        user_rooms = listing_criteria.get("Number of rooms", "").strip()
-        user_beds = listing_criteria.get("Beds", "").strip()
-        user_baths = listing_criteria.get("Baths", "").strip()
-        user_amenities = listing_criteria.get("Desired amenities", [])
+        Args:
+            listing_criteria (Dict): The user's criteria
+            search_results (List[Dict]): A list of listing dictionaries
 
-        # Identify which criteria are active
-        criteria = []
-        if user_location:
-            criteria.append("location")
-        if user_check_in and user_check_out:
-            criteria.append("dates")
-        if user_min_price is not None or user_max_price is not None:
-            criteria.append("price")
-        if user_property_type:
-            criteria.append("property_type")
-        if user_rooms:
-            criteria.append("rooms")
-        if user_beds:
-            criteria.append("beds")
-        if user_baths:
-            criteria.append("baths")
-        if user_amenities:
-            criteria.append("amenities")
+        Returns:
+            List[int]: A list of integers representing scores for each listing
+        """
+        # Prepare the system prompt
+        system_prompt = f"""
+        You are a validation assistant. Given user criteria and Airbnb listings, you must:
 
-        # Calculate scores for each listing
-        scores = []
-        if not criteria:
-            return [1 for _ in search_results]
+        1. Evaluate how well each listing meets the given user criteria. Consider the user’s preferences as a set of desired attributes, such as location, travel dates, the number of guests, price range, number of bedrooms and bathrooms, amenities (like a kitchen, pool, or WiFi), views (like ocean or garden views), and any additional details the user may have provided.
 
-        for listing in search_results:
-            matches = 0.0
-            total = len(criteria)
+        For example:
+        - Location: If the user wants a rental in Paris, then listings in Paris should score higher than those outside the city.
+        - Travel Dates: If the user has specific check-in and check-out dates, a listing that is available for those dates should score higher than one that is not.
+        - Number of Guests: If the user needs accommodation for four guests, a listing that comfortably fits four (e.g., with enough beds) should score higher than one that only fits two.
+        - Price Range: If the user sets a minimum and maximum price per night, a listing that falls within that range should score higher than one that is too expensive or significantly cheaper than expected.
+        - Bedrooms and Bathrooms: If the user wants two bedrooms and two bathrooms, a listing that meets or exceeds that requirement should score higher than one that does not.
+        - Amenities: If the user desires certain amenities (like a fully equipped kitchen, pool, or reliable WiFi), a listing that provides these features should score higher than one that lacks them.
+        - Views: If the user requests an ocean view, listings with actual ocean views should score higher than those with no view or a different view.
+        - Additional Details: Consider any extra preferences, such as proximity to landmarks, pet-friendliness, or interior style. Listings that meet these details should score higher.
 
-            # Check each criterion
-            if "location" in criteria:
-                if listing.get("Location", "").strip().lower() == user_location.lower():
-                    matches += 1
+        Keep in mind that user criteria may be vague or broad. If the user says “affordable” without specifying a price range, consider what might be reasonable in the given context. If the user says “close to the beach,” and the listing is within walking distance, treat that as a positive match.
 
-            if "price" in criteria:
-                listing_price = parse_price(str(listing.get("Price", listing.get("Price range", ""))))
-                if listing_price is not None:
-                    if ((user_min_price is None or listing_price >= user_min_price) and 
-                        (user_max_price is None or listing_price <= user_max_price)):
-                        matches += 1
+        2. Assign a score from 1 to 5 (5 is best) for each listing.
 
-            if "rooms" in criteria:
-                if listing.get("Number of rooms", "") == user_rooms:
-                    matches += 1
+        DO NOT provide any explanations or text other than a JSON array of integers.
+        For example, if there are 3 listings and their scores are 3, 5, and 2, return:
+        [3,5,2]
 
-            if "amenities" in criteria:
-                listing_amenities = listing.get("Amenities", [])
-                if user_amenities:
-                    matched = sum(1 for a in user_amenities 
-                                if a.lower() in [x.lower() for x in listing_amenities])
-                    matches += matched / len(user_amenities)
+        User criteria:
+        {listing_criteria}
+        """.strip()
 
-            # Calculate final score
-            ratio = matches / total if total > 0 else 0
-            score = max(1, min(5, round(1 + ratio * 4)))
-            scores.append(score)
+        # Add listings as a user message
+        listings_str = ""
+        for i, listing in enumerate(search_results, start=1):
+            listings_str += f"Listing {i}:\n"
+            for k, v in listing.items():
+                listings_str += f"{k}: {v}\n"
+            listings_str += "\n"
 
-        return scores
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": listings_str},
+        ]
+
+        response = await self._client.chat.completions.create(
+            model="gpt-4o-mini", 
+            messages=messages,
+            max_tokens=50,
+            temperature=0.9,
+        )
+
+        # Extract response and parse as JSON
+        raw_output = response.choices[0].message['content'].strip()
+        try:
+            scores = json.loads(raw_output)
+            if not isinstance(scores, list) or not all(isinstance(s, int) for s in scores):
+                raise ValueError("Model did not return a JSON list of integers.")
+            return scores
+        except json.JSONDecodeError:
+            raise ValueError("Failed to parse model output as JSON.")
 
     async def ainput(self, prompt: str) -> str:
         """Simulate user input for testing."""
