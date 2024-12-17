@@ -22,9 +22,9 @@ const App = () => {
           boxShadow: 3,
         }}
       >
-        <Typography variant="h4" component="h1" gutterBottom align="center">
+        {/* <Typography variant="h4" component="h1" gutterBottom align="center">
           AutoBnb: Airbnb Query Search
-        </Typography>
+        </Typography> */}
         <Form />
       </Box>
     </Container>

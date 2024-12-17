@@ -5,6 +5,7 @@ import {
   Typography,
   FormControlLabel,
   Checkbox,
+  InputAdornment,
 } from "@mui/material";
 import FormField from "./FormField";
 
@@ -31,9 +32,7 @@ const formatSearchQuery = (formData) => {
     views: formData.views,
     additionalPreferences: formData.additionalInfo.trim() || null
   };
-
-  // return JSON.stringify(structuredData, null, 2);
-  return structuredData
+  return structuredData;
 };
 
 const Form = () => {
@@ -50,6 +49,8 @@ const Form = () => {
     amenities: [],
     views: [],
   });
+
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,10 +70,10 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const query = formatSearchQuery(formValues);
-    
+    setSubmitted(true);
+
     try {
-      console.log('sending...')
-      const response = await fetch('http://localhost:5001/api/search', {
+      const response = await fetch('http://127.0.0.1:5001/api/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -86,6 +87,7 @@ const Form = () => {
       
       const data = await response.json();
       console.log('Search response:', data);
+      setSubmitted(true);
     } catch (error) {
       console.error('Error during search:', error);
     }
@@ -99,143 +101,279 @@ const Form = () => {
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        maxWidth: 600,
+        maxWidth: 1200, 
         margin: "auto",
-        padding: 2,
+        padding: 4,
+        backgroundColor: "#fff",
+        borderRadius: 6,
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+        maxHeight: '80vh',
+        overflow: 'auto',
       }}
     >
-      <FormField
-        label="Location *"
-        name="location"
-        value={formValues.location}
-        onChange={handleChange}
-        required
-      />
-      <FormField
-        label="Check-In Date"
-        name="checkIn"
-        type="date"
-        value={formValues.checkIn}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-      />
-      <FormField
-        label="Check-Out Date"
-        name="checkOut"
-        type="date"
-        value={formValues.checkOut}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-      />
-      <FormField
-        label="Number of Guests"
-        name="guests"
-        type="number"
-        value={formValues.guests}
-        onChange={handleChange}
-      />
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <FormField
-          label="Min Price"
-          name="priceMin"
-          type="number"
-          value={formValues.priceMin}
-          onChange={handleChange}
-          InputProps={{
-            startAdornment: "$"
-          }}
-        />
-        <FormField
-          label="Max Price"
-          name="priceMax"
-          type="number"
-          value={formValues.priceMax}
-          onChange={handleChange}
-          InputProps={{
-            startAdornment: "$"
-          }}
-        />
-      </Box>
-      <Box sx={{ display: 'flex', gap: 2 }}>
-        <FormField
-          label="Bedrooms"
-          name="bedrooms"
-          type="number"
-          value={formValues.bedrooms}
-          onChange={handleChange}
-          InputProps={{ inputProps: { min: 1 } }}
-        />
-        <FormField
-          label="Bathrooms"
-          name="bathrooms"
-          type="number"
-          value={formValues.bathrooms}
-          onChange={handleChange}
-          InputProps={{ inputProps: { min: 1 } }}
-        />
-      </Box>
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>
-          Amenities
+      <Typography
+        variant="h4"
+        color="primary"
+        sx={{
+          fontWeight: "bold",
+          textAlign: "center",
+          color: "#FF5A5F", 
+        }}
+      >
+        AutoBnb: Airbnb Query Search
+      </Typography>
+      
+      {submitted ? (
+        <Typography variant="h6" sx={{ textAlign: "center" }}>
+          Success! Your search has been submitted.
         </Typography>
-        {amenitiesList.map((amenity) => (
-          <FormControlLabel
-            key={amenity}
-            control={
-              <Checkbox
-                value={amenity}
-                checked={formValues.amenities.includes(amenity)}
-                onChange={(e) => handleCheckboxChange(e, "amenities")}
-              />
-            }
-            label={amenity}
+      ) : (
+        <>
+          <FormField
+            label="Location"
+            name="location"
+            value={formValues.location}
+            onChange={handleChange}
+            required
+            InputLabelProps={{ shrink: true }}
+            placeholder="Berkeley, CA"
+            sx={{
+              borderRadius: "8px",
+              padding: "10px",
+              backgroundColor: "#f7f7f7", // Light gray background for inputs
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
           />
-        ))}
-      </Box>
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>
-          Views
-        </Typography>
-        {viewsList.map((view) => (
-          <FormControlLabel
-            key={view}
-            control={
-              <Checkbox
-                value={view}
-                checked={formValues.views.includes(view)}
-                onChange={(e) => handleCheckboxChange(e, "views")}
-              />
-            }
-            label={view}
+          <FormField
+            label="Check-In Date"
+            name="checkIn"
+            type="date"
+            value={formValues.checkIn}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              borderRadius: "8px",
+              padding: "10px",
+              backgroundColor: "#f7f7f7",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
           />
-        ))}
-      </Box>
-      <Box>
-        <Typography variant="subtitle1" gutterBottom>
-          Additional Details
-        </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Describe the vibe or any extra details you're looking for
-        </Typography>
-        <FormField
-          name="additionalInfo"
-          value={formValues.additionalInfo}
-          onChange={handleChange}
-          multiline
-          rows={4}
-          fullWidth
-        />
-      </Box>
-      <Button type="submit" variant="contained" color="primary" fullWidth>
-        Search
-      </Button>
+          <FormField
+            label="Check-Out Date"
+            name="checkOut"
+            type="date"
+            value={formValues.checkOut}
+            onChange={handleChange}
+            InputLabelProps={{ shrink: true }}
+            sx={{
+              borderRadius: "8px",
+              padding: "10px",
+              backgroundColor: "#f7f7f7",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
+          />
+          <FormField
+            label="Number of Guests"
+            name="guests"
+            type="number"
+            value={formValues.guests}
+            onChange={handleChange}
+            sx={{
+              borderRadius: "8px",
+              padding: "10px",
+              backgroundColor: "#f7f7f7",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            }}
+          />
+          
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <FormField
+              label="Min Price"
+              name="priceMin"
+              type="number"
+              value={formValues.priceMin}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>
+              }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <FormField
+              label="Max Price"
+              name="priceMax"
+              type="number"
+              value={formValues.priceMax}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: <InputAdornment position="start">$</InputAdornment>
+              }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <FormField
+              label="Bedrooms"
+              name="bedrooms"
+              type="number"
+              value={formValues.bedrooms}
+              onChange={handleChange}
+              InputProps={{ inputProps: { min: 1 } }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <FormField
+              label="Bathrooms"
+              name="bathrooms"
+              type="number"
+              value={formValues.bathrooms}
+              onChange={handleChange}
+              InputProps={{ inputProps: { min: 1 } }}
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
+              Amenities
+            </Typography>
+            <Box sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}>
+
+              {amenitiesList.map((amenity, index) => (
+                <FormControlLabel
+                  key={amenity}
+                  control={
+                    <Checkbox
+                      id={`amenity-${index}`}
+                      name="amenities" 
+                      value={amenity}
+                      checked={formValues.amenities.includes(amenity)}
+                      onChange={(e) => handleCheckboxChange(e, "amenities")}
+                      sx={{
+                        color: "#444", 
+                        '&.Mui-checked': {
+                          color: "#FF5A5F", 
+                        },
+                        backgroundColor: "#f7f7f7",
+                        borderRadius: "4px",
+                        padding: "6px",
+                      }}
+                    />
+                  }
+                  label={amenity}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
+              Views
+            </Typography>
+            <Box sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}>
+
+              {viewsList.map((view, index) => (
+                <FormControlLabel
+                  key={view}
+                  control={
+                    <Checkbox
+                      id={`view-${index}`}
+                      name="views" 
+                      value={view}
+                      checked={formValues.views.includes(view)}
+                      onChange={(e) => handleCheckboxChange(e, "views")}
+                      sx={{
+                        color: "#444",
+                        '&.Mui-checked': {
+                          color: "#FF5A5F",
+                        },
+                        backgroundColor: "#f7f7f7",
+                        borderRadius: "4px",
+                        padding: "6px", 
+                      }}
+                    />
+                  }
+                  label={view}
+                />
+              ))}
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
+              Additional Details
+            </Typography>
+            <FormField
+              id="additionalInfo" 
+              name="additionalInfo"
+              value={formValues.additionalInfo}
+              onChange={handleChange}
+              multiline
+              rows={4}
+              fullWidth
+              placeholder="cozy cabin vibe"
+              sx={{
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#f7f7f7",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            sx={{
+              marginTop: 3,
+              padding: "12px 24px",
+              fontSize: "1rem",
+              fontWeight: 'bold', 
+              fontFamily: '"Circular", sans-serif',
+              borderRadius: "8px",
+              backgroundColor: "#FF5A5F", 
+              color: "#ffffff", 
+              '&:hover': {
+                backgroundColor: "#FF3B39", 
+              }
+            }}
+          >
+            Search
+          </Button>
+        </>
+      )}
     </Box>
   );
 };
 
 export default Form;
-
-// add price range, number of bed and bath
-// additional info large text field, subheader vibe or extra details
-
-// format only default fields as good instruction for web surfer agent, use fedfault search filter mechanism, format as a task

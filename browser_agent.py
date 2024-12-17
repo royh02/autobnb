@@ -3,7 +3,7 @@ import logging
 import os
 import argparse
 
-from autogen_core.application import SingleThreadedAgentRuntime
+from autogen_core import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
 from autogen_core.base import AgentId, AgentProxy, Subscription
 from autogen_magentic_one.agents.multimodal_web_surfer import MultimodalWebSurfer
