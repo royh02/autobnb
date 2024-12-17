@@ -2,16 +2,52 @@
 
 AutoBnb: Making searching for a place on Airbnb a breeze
 
-# Setup
+# Environment Setup
 
-Use conda, python 3.10, and do
+1. **Install Conda and Use Python 3.10**:
+    ```bash
+    conda create -n myenv python=3.10
+    conda activate myenv
+    ```
 
-`pip install -r requirements.txt`
+2. **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-# Activate Venv
+3. **Install Autogen Locally and Activate Virtual Environment**:
+    ```bash
+    git clone https://github.com/microsoft/autogen.git
+    cd autogen/python
+    uv sync --all-extras
+    source .venv/bin/activate
+    ```
 
-`source autogen/python/.venv/bin/activate`
+4. **Install Magnetic One from Autogen**:
+    ```bash
+    cd packages/autogen-magentic-one
+    pip install -e .
+    ```
 
-# Run
+5. **Configure Environment Variables**:
+    Create a `.env` file with the following content:
+    ```bash
+    OPENAI_API_KEY=your_openai_api_key
+    ```
 
-`python main.py <args>`
+6. **Setup the Backend Server**:
+    ```bash
+    python3 main.py
+    ```
+
+7. **Start the Application Locally** (in a different terminal window):
+    ```bash
+    cd autobnb-app
+    npm i
+    npm run start
+    ```
+
+# Instructions
+1. Submit the form based on user preferences, and watch Autobnb generate your ideal Airbnb!
+
+
