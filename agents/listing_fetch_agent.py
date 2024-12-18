@@ -14,6 +14,7 @@ from autogen_magentic_one.agents.base_worker import BaseWorker
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from openai import AsyncOpenAI
 
 def extract_airbnb_listing_links(url):
     try:
@@ -57,7 +58,7 @@ class ListingFetchAgent(BaseWorker):
         client=None,  # Optional client for extended functionality
     ) -> None:
         super().__init__(description)
-        self._client = client
+        self._openai_client = AsyncOpenAI()
 
     async def _generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
         """
