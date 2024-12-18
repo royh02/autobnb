@@ -14,27 +14,24 @@ from autogen_magentic_one.agents.base_worker import BaseWorker
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-<<<<<<< HEAD
 from openai import AsyncOpenAI
-=======
-from playwright.sync_api import sync_playwright
->>>>>>> ab9694b (fix listing)
+from playwright.async_api import async_playwright
 
 
-def get_dynamic_html(url):
+async def get_dynamic_html(url):
     try:
-        # Start Playwright and open the browser
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)  # Set headless=False if you want to see the browser
-            page = browser.new_page()
+        async with async_playwright() as p:
+            # Launch the browser
+            browser = await p.chromium.launch(headless=True)  # Set headless=False to visualize the browser
+            page = await browser.new_page()
             # Go to the page
-            page.goto(url)
+            await page.goto(url)
             # Wait for the page to load completely
-            page.wait_for_load_state('networkidle')
-            # Get the final HTML after JavaScript has executed
-            html_content = page.content()
+            await page.wait_for_load_state('networkidle')
+            # Get the final HTML after JavaScript execution
+            html_content = await page.content()
 
-            browser.close()
+            await browser.close()
             return html_content
 
     except Exception as e:
@@ -42,28 +39,28 @@ def get_dynamic_html(url):
 
 
 # Function to extract Airbnb listing links
-def extract_airbnb_listing_links(url):
+async def extract_airbnb_listing_links(url):
     try:
         # Step 1: Fetch HTML content from the Airbnb page
-        html_content = get_dynamic_html(url)
+        html_content = await get_dynamic_html(url)
         
         # Step 2: Parse HTML with BeautifulSoup
         soup = BeautifulSoup(html_content, 'html.parser')
         
         # Step 3: Find all `<a>` tags and filter for listing links
         base_url = "https://www.airbnb.com"  # Base URL for constructing full links
-        listings = []
+        listings = set()
         for a_tag in soup.find_all('a', href=True, recursive=True):
             href = a_tag['href']
-            print(href)
             if "/rooms/" in href:  # Airbnb listing URLs usually contain '/rooms/'
                 full_url = urljoin(base_url, href)  # Construct full URL
-                listings.append(full_url)
+                listings.add(full_url)
         
+
         # Step 4: Format and output the result
         formatted_list = [
             f"{i + 1}. {url}" for i, url in enumerate(listings)
-        ]
+        ][:5]
         return "\n\n".join(formatted_list)
     except requests.exceptions.RequestException as e:
         return f"Error fetching page: {e}"
@@ -112,7 +109,7 @@ class ListingFetchAgent(BaseWorker):
             # Prepare context from chat history
             context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
             extracted_url = await self._parse_context(context)
-            listing_urls = extract_airbnb_listing_links(extracted_url)
+            listing_urls = await extract_airbnb_listing_links(extracted_url)
             response = f"Here are the listing urls: {listing_urls}"
             return False, response
 

@@ -49,11 +49,14 @@ class RankingAgent(BaseWorker):
         
         try:
             # Prepare context from chat history
-            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            context = " ".join([str(msg.content) for msg in self._chat_history])
             listings, description_scores, image_scores = await self._parse_context(context)
             ranked_listings_idxs = self._rank_listings(description_scores, image_scores)
             sorted_listings = [listings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
             response = f"Here are the listings sorted by their scores: {sorted_listings}"
+            with open("sorted_listings.txt", "w") as file:
+                for listing in sorted_listings:
+                    file.write(f"{listing}\n")
             return False, response
         
         except Exception as e:

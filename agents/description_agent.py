@@ -55,7 +55,7 @@ class DescriptionAgent(BaseWorker):
         #     return False, "No model client available. Please provide a valid client."
 
         try:
-            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            context = " ".join([str(msg.content) for msg in self._chat_history])
             criteria, descriptions = await self._parse_context(context)
             description_scores = await self._score_listings(criteria, descriptions)
             response = f"Here are the description scores: {description_scores}"
@@ -84,7 +84,6 @@ class DescriptionAgent(BaseWorker):
             messages=[{"role": "user", "content": prompt}],
             response_format=DescriptionInput,
         )
-
         decription_input = response.choices[0].message.parsed
         criteria = decription_input.criteria
         descriptions = decription_input.descriptions

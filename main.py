@@ -32,16 +32,20 @@ def search():
     query = json.loads(data.get('query'))
     start_page, user_prefs = query['url'], query['user_pref']
 
+    user_prefs['starting_url'] = start_page
     
     print('hihihi', query)
 
     file_path = 'user_request.txt'
     with open(file_path, 'w') as file:
-        file.write(user_prefs)
+        file.write(json.dumps(user_prefs))
 
     asyncio.run(main(start_page, './logs', False, True))
 
-    return jsonify({'message': 'Search request received', 'query': query})
+    with open('sorted_listings.txt', 'r') as file:
+        sorted_listings = file.read().splitlines()
+
+    return jsonify({'message': 'Search request received', 'query': query, 'sorted_listings': sorted_listings})
 
 def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
@@ -79,8 +83,9 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch, init_agent, listing_validator, image_analysis, ranking_agent],
-            model_client=client
+            agents=[web_surfer, listing_fetch, init_agent, description_agent, ranking_agent],
+            model_client=client,
+            max_stalls_before_replan=10,
         )
     )
 

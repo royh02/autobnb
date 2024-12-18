@@ -47,7 +47,7 @@ class ImageAnalysisAgent(BaseWorker):
         
         try:
             # Prepare context from chat history
-            context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
+            context = " ".join([str(msg.content) for msg in self._chat_history])
             criteria, image_urls = await self._parse_context(context)
             image_scores = await self._score_images(criteria, image_urls)
             response = f"Here are the image scores: {image_scores}"

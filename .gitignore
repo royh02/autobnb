@@ -16,5 +16,6 @@ package-lock.json
 autogen
 
 user_request.txt
+sorted_listings.txt
 
 *.pyc

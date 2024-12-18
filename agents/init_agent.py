@@ -41,8 +41,18 @@ class InitAgent(BaseWorker):
                 user_input = file.read()
             
             response = f"""
-            The web surfer agent will be started on a Airbnb page with potential listings.
             Given the user preferences provided, use the agents at disposal to look in these listings for the best possible matches.
+            
+            Start with the Listing Fetch Agent to get the listings' URLs. Then use the Web Surfer Agent to visit all the URLs outputted
+            by the Listing Fetch Agent to provide summaries of each of the listings.
+
+            Have the Web Surfer Agent always output the original listing URL followed by the summary.
+
+            Only have the Listing Fetch Agent be called once.
+
+            After the summaries are provided, use the Description Agent to score the descriptions of each listing.
+
+            At the end, use the Ranking Agent to rank the listings based on the scores provided by the Description Agent.
 
             ### User Preferences: {user_input}
             """
