@@ -87,7 +87,7 @@ class DescriptionAgent(BaseWorker):
 
         decription_input = response.choices[0].message.parsed
         criteria = decription_input.criteria
-        descriptions = decription_input.image_urls
+        descriptions = decription_input.descriptions
         return criteria, descriptions
 
     async def _score_listings(
