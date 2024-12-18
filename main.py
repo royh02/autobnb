@@ -20,12 +20,98 @@ from agents.ranking_agent import RankingAgent
 from agents.description_agent import DescriptionAgent
 from config import MODEL_NAME, MAX_LISTING_COUNT, FLASK_PORT
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import asyncio
+import os
+import tempfile
+from urllib.parse import unquote
+import time
+from playwright.sync_api import sync_playwright
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 cors = CORS(app)
+
+# Create a cache directory for screenshots
+CACHE_DIR = os.path.join(tempfile.gettempdir(), 'airbnb_previews')
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def get_image_url(url):
+    try:
+        # Set up headers to mimic a browser
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        # Fetch the page content
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Try to find the meta image tag
+        meta_image = soup.find('meta', {'itemprop': 'image'})
+        if meta_image and meta_image.get('content'):
+            return meta_image['content']
+            
+        # Fallback: try other meta tags
+        meta_og_image = soup.find('meta', {'property': 'og:image'})
+        if meta_og_image and meta_og_image.get('content'):
+            return meta_og_image['content']
+            
+        return None
+    except Exception as e:
+        print(f"Error getting image URL: {str(e)}")
+        return None
+
+def get_screenshot(url):
+    # Create a cache filename based on the URL
+    cache_file = os.path.join(CACHE_DIR, f"{hash(url)}.png")
+    
+    # Check if cached version exists and is less than 24 hours old
+    if os.path.exists(cache_file):
+        file_age = time.time() - os.path.getmtime(cache_file)
+        if file_age < 86400:  # 24 hours in seconds
+            return cache_file
+
+    # Get the image URL from the page
+    image_url = get_image_url(url)
+    if not image_url:
+        print(f"No image URL found for {url}")
+        return None
+
+    # Download and save the image
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(image_url, headers=headers)
+        if response.status_code == 200:
+            with open(cache_file, 'wb') as f:
+                f.write(response.content)
+            return cache_file
+    except Exception as e:
+        print(f"Error downloading image: {str(e)}")
+        return None
+
+    return None
+
+@app.route('/preview/<path:url>')
+def get_preview(url):
+    print('hihi', url)
+    try:
+        decoded_url = unquote(url)
+        print('hihi1', decoded_url)
+        screenshot_path = get_screenshot(decoded_url)
+        
+        if screenshot_path and os.path.exists(screenshot_path):
+            return send_file(screenshot_path, mimetype='image/png')
+        else:
+            # Return a 404 if no screenshot could be taken
+            return '', 404
+    except Exception as e:
+        print(f"Error serving preview: {str(e)}")
+        return str(e), 500
 
 @app.route('/api/search', methods=['POST'])
 def search():
