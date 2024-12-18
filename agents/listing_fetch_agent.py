@@ -98,7 +98,7 @@ class ListingFetchAgent(BaseWorker):
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a string containing the URL of the Airbnb website.
+        Your task is to parse the chat history and extract a string containing the URL of the Airbnb website. Output only the url.
 
         Chat history:
         {context}

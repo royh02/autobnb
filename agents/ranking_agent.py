@@ -75,7 +75,7 @@ class RankingAgent(BaseWorker):
         """.strip()
 
         # Call the OpenAI API
-        response = await self._openai_client.chat.completions.create(
+        response = await self._openai_client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             response_format=RankingInput,
