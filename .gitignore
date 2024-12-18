@@ -18,4 +18,5 @@ autogen
 user_request.txt
 sorted_listings.txt
 
+**/__pycache__
 *.pyc

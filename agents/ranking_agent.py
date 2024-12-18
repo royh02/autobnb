@@ -1,5 +1,6 @@
 import asyncio
 from typing import Tuple
+from config import MODEL_NAME, DESCRIPTION_WEIGHT, IMAGE_WEIGHT
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -79,7 +80,7 @@ class RankingAgent(BaseWorker):
 
         # Call the OpenAI API
         response = await self._openai_client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             response_format=RankingInput,
         )
@@ -91,9 +92,8 @@ class RankingAgent(BaseWorker):
         return listings, description_scores, image_scores
     
     def _rank_listings(self, description_scores: list[int], image_scores: list[int]) -> list[int]:
-        weight = 0.8
         scores = [
-            weight * description_score + (1 - weight) * image_score 
+            DESCRIPTION_WEIGHT * description_score + IMAGE_WEIGHT * image_score 
             for description_score, image_score in zip_longest(description_scores, image_scores, fillvalue=0)
         ]
         sorted_listing_idxs = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)

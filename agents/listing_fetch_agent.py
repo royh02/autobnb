@@ -1,5 +1,6 @@
 import asyncio
 from typing import Tuple, Dict
+from config import MODEL_NAME, MAX_LISTING_COUNT
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -60,7 +61,7 @@ async def extract_airbnb_listing_links(url):
         # Step 4: Format and output the result
         formatted_list = [
             f"{i + 1}. {url}" for i, url in enumerate(listings)
-        ][:5]
+        ][:MAX_LISTING_COUNT]
         return "\n\n".join(formatted_list)
     except requests.exceptions.RequestException as e:
         return f"Error fetching page: {e}"
@@ -128,7 +129,7 @@ class ListingFetchAgent(BaseWorker):
 
         # Call the OpenAI API
         response = await self._openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
         )
 

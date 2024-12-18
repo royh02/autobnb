@@ -43,10 +43,7 @@ class InitAgent(BaseWorker):
             response = f"""
             Given the user preferences provided, use the agents at disposal to look in these listings for the best possible matches.
             
-            Start with the Listing Fetch Agent to get the listings' URLs. Then use the Web Surfer Agent to visit all the URLs outputted
-            by the Listing Fetch Agent to provide summaries of each of the listings.
-
-            Have the Web Surfer Agent always output the original listing URL followed by the summary.
+            Start with the Listing Fetch Agent to get the listings' URLs. Then use the Browsing Agent to visit all the URLs outputted by the Listing Fetch Agent to provide summaries of each of the listings.
 
             Only have the Listing Fetch Agent be called once.
 

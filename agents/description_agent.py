@@ -1,6 +1,7 @@
 import asyncio
 import json
 from typing import Tuple, Dict, List
+from config import MODEL_NAME, TEMPERATURE
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -80,7 +81,7 @@ class DescriptionAgent(BaseWorker):
 
         # Call the OpenAI API
         response = await self._openai_client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
+            model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             response_format=DescriptionInput,
         )
@@ -146,10 +147,10 @@ class DescriptionAgent(BaseWorker):
         ]
 
         response = await self._openai_client.chat.completions.create(
-            model="gpt-4o-mini", 
+            model=MODEL_NAME, 
             messages=messages,
             max_tokens=50,
-            temperature=0.9,
+            temperature=TEMPERATURE,
         )
 
         # Extract response and parse as JSON

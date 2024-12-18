@@ -13,10 +13,12 @@ from autogen_magentic_one.agents.user_proxy import UserProxy
 from autogen_magentic_one.messages import RequestReplyMessage
 from autogen_magentic_one.utils import LogHandler, create_completion_client_from_env
 from agents.init_agent import InitAgent
+from agents.browsing_agent import BrowsingAgent
 from agents.listing_fetch_agent import ListingFetchAgent
 from agents.image_analysis_agent import ImageAnalysisAgent
 from agents.ranking_agent import RankingAgent
 from agents.description_agent import DescriptionAgent
+from config import MODEL_NAME, MAX_LISTING_COUNT, FLASK_PORT
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -56,14 +58,17 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
     runtime = SingleThreadedAgentRuntime()
 
     # Create an appropriate client
-    client = create_completion_client_from_env(model="gpt-4o-mini")
+    client = create_completion_client_from_env(model=MODEL_NAME)
 
     # Register agents.
-    await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
-    web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
+    # await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
+    # web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
 
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
+
+    await BrowsingAgent.register(runtime, "BrowsingAgent", BrowsingAgent)
+    browsing_agent = AgentProxy(AgentId("BrowsingAgent", "default"), runtime)
 
     await DescriptionAgent.register(runtime, "DescriptionAgent", DescriptionAgent)
     description_agent = AgentProxy(AgentId("DescriptionAgent", "default"), runtime)
@@ -83,24 +88,24 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch, init_agent, description_agent, ranking_agent],
+            agents=[init_agent, listing_fetch, browsing_agent, description_agent, ranking_agent],
             model_client=client,
-            max_stalls_before_replan=10,
+            max_stalls_before_replan=MAX_LISTING_COUNT,
         )
     )
 
     runtime.start()
 
-    actual_surfer = await runtime.try_get_underlying_agent_instance(web_surfer.id, type=MultimodalWebSurfer)
-    await actual_surfer.init(
-        model_client=client,
-        downloads_folder=logs_dir,
-        start_page=start_page,
-        browser_channel="chromium",
-        headless=True,
-        debug_dir=logs_dir,
-        to_save_screenshots=save_screenshots,
-    )
+    # actual_surfer = await runtime.try_get_underlying_agent_instance(web_surfer.id, type=MultimodalWebSurfer)
+    # await actual_surfer.init(
+    #     model_client=client,
+    #     downloads_folder=logs_dir,
+    #     start_page=start_page,
+    #     browser_channel="chromium",
+    #     headless=True,
+    #     debug_dir=logs_dir,
+    #     to_save_screenshots=save_screenshots,
+    # )
 
     await runtime.send_message(RequestReplyMessage(), init_agent.id)
     # await runtime.send_message(message, orchestrator.id)
@@ -148,6 +153,6 @@ if __name__ == "__main__":
 
 
     # server code
-    port = 5001  # Specify the port you want to use
+    port = FLASK_PORT  # Specify the port you want to use
     print(f"Flask server running on http://localhost:{port}")
     app.run(debug=True, port=port)
