@@ -32,7 +32,7 @@ class DescriptionAgent(BaseWorker):
         client=None,  
     ) -> None:
         super().__init__(description)
-        self._client = client
+        # self._client = client
         self._openai_client = AsyncOpenAI()
 
     async def _generate_reply(
@@ -51,8 +51,8 @@ class DescriptionAgent(BaseWorker):
             Tuple[bool, UserContent]: Indicates if process should halt and the validation results (as a list of integers)
         """
         # If no client is provided, return a placeholder response
-        if not self._client:
-            return False, "No model client available. Please provide a valid client."
+        # if not self._client:
+        #     return False, "No model client available. Please provide a valid client."
 
         try:
             context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])

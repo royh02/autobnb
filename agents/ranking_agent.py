@@ -32,7 +32,7 @@ class RankingAgent(BaseWorker):
         client = None,  # Optional model client
     ) -> None:
         super().__init__(description)
-        self._client = client
+        # self._client = client
         self._openai_client = AsyncOpenAI()
     
     async def _generate_reply(self, cancellation_token: CancellationToken) -> Tuple[bool, UserContent]:
@@ -43,9 +43,9 @@ class RankingAgent(BaseWorker):
         :return: Tuple of (request_halt, response)
         """
         # If no client is provided, simulate a simple response
-        if not self._client:
-            response = "No client available. Provide a valid client."
-            return False, response
+        # if not self._client:
+        #     response = "No client available. Provide a valid client."
+        #     return False, response
         
         try:
             # Prepare context from chat history
