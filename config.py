@@ -6,7 +6,7 @@ TEMPERATURE = 0.9
 MAX_WORKERS = 4
 
 # Max listings to search for
-MAX_LISTING_COUNT = 2
+MAX_LISTING_COUNT = 4
 
 # Flask port
 FLASK_PORT = 5001

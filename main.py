@@ -18,6 +18,7 @@ from agents.listing_fetch_agent import ListingFetchAgent
 from agents.image_analysis_agent import ImageAnalysisAgent
 from agents.ranking_agent import RankingAgent
 from agents.description_agent import DescriptionAgent
+from agents.parsing_agent import ParsingAgent
 from config import MODEL_NAME, MAX_LISTING_COUNT, FLASK_PORT
 
 from flask import Flask, request, jsonify, send_file
@@ -116,19 +117,14 @@ def get_preview(url):
 @app.route('/api/search', methods=['POST'])
 def search():
     data = request.json
-    print(data.get('query'), type(data.get('query')))
     query = json.loads(data.get('query'))
-    start_page, user_prefs = query['url'], query['user_pref']
-
-    user_prefs['starting_url'] = start_page
-    
-    print('hihihi', query)
+    user_prefs = query['user_pref']
 
     file_path = 'user_request.txt'
     with open(file_path, 'w') as file:
         file.write(json.dumps(user_prefs))
 
-    asyncio.run(main(start_page, './logs', False, True))
+    asyncio.run(main('./logs', False, True))
 
     with open('sorted_listings.txt', 'r') as file:
         sorted_listings = file.read().splitlines()
@@ -139,7 +135,7 @@ def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
 
 
-async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
+async def main(logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     # Create the runtime.
     runtime = SingleThreadedAgentRuntime()
 
@@ -149,6 +145,9 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
     # Register agents.
     # await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
     # web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
+    
+    await ParsingAgent.register(runtime, "ParsingAgent", ParsingAgent)
+    parsing_agent = AgentProxy(AgentId("ParsingAgent", "default"), runtime)
 
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
@@ -174,7 +173,7 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[init_agent, listing_fetch, browsing_agent, description_agent, image_analysis, ranking_agent],
+            agents=[init_agent, parsing_agent, listing_fetch, browsing_agent, description_agent, image_analysis, ranking_agent],
             model_client=client,
             max_stalls_before_replan=MAX_LISTING_COUNT,
         )

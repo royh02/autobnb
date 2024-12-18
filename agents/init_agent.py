@@ -43,9 +43,9 @@ class InitAgent(BaseWorker):
             response = f"""
             Given the user preferences provided, use the agents at disposal to look in these listings for the best possible matches. Agents can access the chat history to see the outputs of other agents, so there is no need for the orchestrator to repeat details of agent outputs to other agents.
             
-            Start with the Listing Fetch Agent to get the listings' URLs. Then use the Browsing Agent to visit all the URLs outputted by the Listing Fetch Agent to provide summaries of each of the listings. After the summaries are provided, use the Description Agent to score the descriptions of each listing and the Image Analysis Agent to score the images of each listing. Finally, use the Ranking Agent to rank the listings based on the scores provided by both the Description Agent and the Image Analysis Agent.
+            Start with the Parsing Agent to parse the user's preferences. Then call the Listing Fetch Agent to get the listings' URLs. Then use the Browsing Agent to visit all the URLs outputted by the Listing Fetch Agent to provide summaries of each of the listings. After the summaries are provided, use the Description Agent to score the descriptions of each listing and the Image Analysis Agent to score the images of each listing. Finally, use the Ranking Agent to rank the listings based on the scores provided by both the Description Agent and the Image Analysis Agent.
 
-            The Listing Fetch Agent should only be called once. The request is not satisfied until the Ranking Agent has been called.
+            The Listing Fetch Agent should only be called once. When calling the browser agent you do not need to tell it which links to visit. The request is not satisfied until the Ranking Agent has been called.
 
             ### User Preferences: {user_input}
             """

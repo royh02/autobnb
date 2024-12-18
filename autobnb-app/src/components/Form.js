@@ -9,60 +9,8 @@ import {
   TextField,
 } from "@mui/material";
 
-// const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
-const amenitiesList = [
-  "WiFi",
-  "Kitchen",
-  "Washer",
-  "Dryer",
-  "Free Parking",
-  "Gym",
-  "Pool",
-];
-// const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
-
 const formatSearchQuery = (formData) => {
-  const url =
-    "https://www.airbnb.com/s/" +
-    formData.location +
-    "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes" +
-    "&price_filter_input_type=2" +
-    "&channel=EXPLORE" +
-    "&date_picker_type=calendar" +
-    (formData.checkIn ? "&checkin=" + formData.checkIn.toString() : "") +
-    (formData.checkOut ? "&checkout=" + formData.checkOut.toString() : "") +
-    (formData.guests.adults
-      ? "&adults=" + formData.guests.adults.toString()
-      : "") +
-    (formData.guests.children
-      ? "&children=" + formData.guests.children.toString()
-      : "") +
-    (formData.guests.infants
-      ? "&infants=" + formData.guests.infants.toString()
-      : "") +
-    (formData.guests.pets ? "&pets=" + formData.guests.pets.toString() : "") +
-    "&source=structured_search_input_header" +
-    "&search_type=filter_change" +
-    "&search_mode=regular_search" +
-    (formData.priceMin ? "&price_min=" + formData.priceMin.toString() : "") +
-    (formData.priceMax ? "&price_max=" + formData.priceMax.toString() : "") +
-    "&min_bedrooms=" +
-    formData.bedrooms.toString() +
-    "&min_bathrooms=" +
-    formData.bathrooms.toString() +
-    (formData.amenities.includes("Wifi") ? "&amenities%5B%5D=4" : "") +
-    (formData.amenities.includes("Kitchen") ? "&amenities%5B%5D=8" : "") +
-    (formData.amenities.includes("Washer") ? "&amenities%5B%5D=33" : "") +
-    (formData.amenities.includes("Dryer") ? "&amenities%5B%5D=34" : "") +
-    (formData.amenities.includes("Free Parking") ? "&amenities%5B%5D=9" : "") +
-    (formData.amenities.includes("Gym") ? "&amenities%5B%5D=15" : "") +
-    (formData.amenities.includes("Pool") ? "&amenities%5B%5D=7" : "") +
-    (formData.guests.pets ? "&selected_filter_order%5B%5D=pets%3A1" : "");
-
-  console.log(url);
-
   const result = JSON.stringify({
-    url: url,
     user_pref: formData,
   });
 
@@ -151,18 +99,7 @@ const Form = () => {
     location: "",
     checkIn: "",
     checkOut: "",
-    guests: {
-      adults: 1,
-      children: 0,
-      infants: 0,
-      pets: 0,
-    },
-    priceMin: "",
-    priceMax: "",
-    bedrooms: 1,
-    bathrooms: 1,
-    additionalInfo: "",
-    amenities: [],
+    additionalInfo: ""
   });
 
   const [error, setError] = useState(null);
