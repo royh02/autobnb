@@ -178,13 +178,13 @@ const Form = () => {
     const query = formatSearchQuery(formValues);
     setIsLoading(true);
     setError(null);
-    const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
-    if (Array.isArray(data.sorted_listings)) {
-      // Navigate to results page with the URLs
-      navigate('/results', { state: { urls: data.sorted_listings } });
-    } else {
-      setError("Invalid response format from server");
-    }
+    // const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
+    // if (Array.isArray(data.sorted_listings)) {
+    //   // Navigate to results page with the URLs
+    //   navigate('/results', { state: { urls: data.sorted_listings } });
+    // } else {
+    //   setError("Invalid response format from server");
+    // }
 
     try {
       const response = await fetch("http://127.0.0.1:5001/api/search", {
@@ -199,14 +199,14 @@ const Form = () => {
         throw new Error("Search request failed");
       }
 
-      // const data = await response.json();
+      const data = await response.json();
       // const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
-      // if (Array.isArray(data.sorted_listings)) {
-      //   // Navigate to results page with the URLs
-      //   navigate('/results', { state: { urls: data.sorted_listings } });
-      // } else {
-      //   setError("Invalid response format from server");
-      // }
+      if (Array.isArray(data.sorted_listings)) {
+        // Navigate to results page with the URLs
+        navigate('/results', { state: { urls: data.sorted_listings } });
+      } else {
+        setError("Invalid response format from server");
+      }
     } catch (error) {
       console.error("Error during search:", error);
       setError(error.message);
