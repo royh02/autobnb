@@ -29,51 +29,44 @@ const formatSearchQuery = (formData) => {
     "&price_filter_input_type=2" +
     "&channel=EXPLORE" +
     "&date_picker_type=calendar" +
-    "&checkin=" +
-    formData.checkIn.toString() +
-    "&checkout=" +
-    formData.checkOut.toString() +
-    formData.guests.adults
+    (formData.checkIn ? "&checkin=" + formData.checkIn.toString() : "") +
+    (formData.checkOut ? "&checkout=" + formData.checkOut.toString() : "") +
+    (formData.guests.adults
       ? "&adults=" + formData.guests.adults.toString()
-      : "" + formData.guests.children
-      ? "&children=" + formData.guests.adults.toString()
-      : "" + formData.guests.infants
+      : "") +
+    (formData.guests.children
+      ? "&children=" + formData.guests.children.toString()
+      : "") +
+    (formData.guests.infants
       ? "&infants=" + formData.guests.infants.toString()
-      : "" + formData.guests.pets
-      ? "&pets=" + formData.guests.pets.toString()
-      : "" +
-        "&source=structured_search_input_header" +
-        "&search_type=filter_change" +
-        "&search_mode=regular_search" +
-        "&price_min=" +
-        formData.priceMin.toString() +
-        "&price_max=" +
-        formData.priceMax.toString() +
-        "&min_bedrooms=" +
-        formData.bedrooms.toString() +
-        "&min_bathrooms=" +
-        formData.bathRooms.toString() +
-        formData.amenities.contains("Wifi")
-      ? "&amenities%5B%5D=4"
-      : "" + formData.amenities.contains("Kitchen")
-      ? "&amenities%5B%5D=8"
-      : "" + formData.amenities.contains("Washer")
-      ? "&amenities%5B%5D=33"
-      : "" + formData.amenities.contains("Dryer")
-      ? "&amenities%5B%5D=34"
-      : "" + formData.amenities.contains("Free Parking")
-      ? "&amenities%5B%5D=9"
-      : "" + formData.amenities.contains("Gym")
-      ? "&amenities%5B%5D=15"
-      : "" + formData.amenities.contains("Pool")
-      ? "&amenities%5B%5D=7"
-      : "" + formData.guests.pets
-      ? "&selected_filter_order%5B%5D=pets%3A1"
-      : "";
+      : "") +
+    (formData.guests.pets ? "&pets=" + formData.guests.pets.toString() : "") +
+    "&source=structured_search_input_header" +
+    "&search_type=filter_change" +
+    "&search_mode=regular_search" +
+    (formData.priceMin ? "&price_min=" + formData.priceMin.toString() : "") +
+    (formData.priceMax ? "&price_max=" + formData.priceMax.toString() : "") +
+    "&min_bedrooms=" +
+    formData.bedrooms.toString() +
+    "&min_bathrooms=" +
+    formData.bathRooms.toString() +
+    (formData.amenities.contains("Wifi") ? "&amenities%5B%5D=4" : "") +
+    (formData.amenities.contains("Kitchen") ? "&amenities%5B%5D=8" : "") +
+    (formData.amenities.contains("Washer") ? "&amenities%5B%5D=33" : "") +
+    (formData.amenities.contains("Dryer") ? "&amenities%5B%5D=34" : "") +
+    (formData.amenities.contains("Free Parking") ? "&amenities%5B%5D=9" : "") +
+    (formData.amenities.contains("Gym") ? "&amenities%5B%5D=15" : "") +
+    (formData.amenities.contains("Pool") ? "&amenities%5B%5D=7" : "") +
+    (formData.guests.pets ? "&selected_filter_order%5B%5D=pets%3A1" : "");
 
-  const additionalInfo = formData.additionalInfo;
+  console.log(url);
 
-  return additionalInfo + "___" + url;
+  const result = JSON.stringify({
+    url: url,
+    user_pref: formData,
+  });
+
+  return result;
 };
 
 const Form = () => {
@@ -85,7 +78,7 @@ const Form = () => {
       adults: 1,
       children: 0,
       infants: 0,
-      pets: 0
+      pets: 0,
     },
     priceMin: "",
     priceMax: "",

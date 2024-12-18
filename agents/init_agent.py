@@ -42,9 +42,9 @@ class InitAgent(BaseWorker):
             
             response = f"""
             The web surfer agent will be started on a Airbnb page with potential listings.
-            Given additional info provided, use the agents at disposal to look in these listings for the best possible matches.
+            Given the user preferences provided, use the agents at disposal to look in these listings for the best possible matches.
 
-            ### Additional Info: {user_input}
+            ### User Preferences: {user_input}
             """
             
             return False, response

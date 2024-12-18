@@ -28,15 +28,16 @@ cors = CORS(app)
 @app.route('/api/search', methods=['POST'])
 def search():
     data = request.json
+    print(data.get('query'), type(data.get('query')))
     query = json.loads(data.get('query'))
-    start_page, additionalInfo = query['url'], query['additional_info']
+    start_page, user_prefs = query['url'], query['user_pref']
 
     
     print('hihihi', query)
 
     file_path = 'user_request.txt'
     with open(file_path, 'w') as file:
-        file.write(additionalInfo)
+        file.write(user_prefs)
 
     asyncio.run(main(start_page, './logs', False, True))
 
