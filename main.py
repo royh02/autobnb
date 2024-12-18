@@ -45,7 +45,7 @@ def search():
     with open('sorted_listings.txt', 'r') as file:
         sorted_listings = file.read().splitlines()
 
-    return jsonify({'message': 'Search request received', 'query': query, 'sorted_listings': sorted_listings})
+    return jsonify({'sorted_listings': sorted_listings})
 
 def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")

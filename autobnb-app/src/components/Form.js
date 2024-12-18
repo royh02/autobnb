@@ -1,3 +1,6 @@
+Form.js backup
+
+
 import React, { useState } from "react";
 import {
   Button,
@@ -89,6 +92,8 @@ const Form = () => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [urls, setUrls] = useState([]);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -109,6 +114,7 @@ const Form = () => {
     e.preventDefault();
     const query = formatSearchQuery(formValues);
     setSubmitted(true);
+    setError(null);
 
     try {
       const response = await fetch("http://127.0.0.1:5001/api/search", {
@@ -124,10 +130,15 @@ const Form = () => {
       }
 
       const data = await response.json();
-      console.log("Search response:", data);
-      setSubmitted(true);
+      // console.log("Search response:", data);
+      if (Array.isArray(data.sorted_listings)) {
+        setUrls(data.sorted_listings);
+      } else {
+        setError("Invalid response format from server");
+      }
     } catch (error) {
       console.error("Error during search:", error);
+      setError(error.message);
     }
   };
 
@@ -162,9 +173,75 @@ const Form = () => {
       </Typography>
 
       {submitted ? (
-        <Typography variant="h6" sx={{ textAlign: "center" }}>
-          Success! Your search has been submitted.
-        </Typography>
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          {error ? (
+            <Typography color="error" variant="h6">
+              {error}
+            </Typography>
+          ) : urls.length > 0 ? (
+            <>
+              <Typography variant="h6" sx={{ mb: 3 }}>
+                Found {urls.length} matching listings:
+              </Typography>
+              <Box sx={{ 
+                maxHeight: "60vh", 
+                overflow: "auto",
+                bgcolor: "#f7f7f7",
+                borderRadius: "8px",
+                p: 2
+              }}>
+                {urls.map((url, index) => (
+                  <Box 
+                    key={index}
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      bgcolor: "white",
+                      borderRadius: "4px",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                    }}
+                  >
+                    <a 
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        color: "#FF5A5F",
+                        textDecoration: "none",
+                        fontWeight: "500"
+                      }}
+                    >
+                      Listing {index + 1}
+                    </a>
+                  </Box>
+                ))}
+              </Box>
+              <Button
+                onClick={() => {
+                  setSubmitted(false);
+                  setUrls([]);
+                  setError(null);
+                }}
+                variant="outlined"
+                sx={{
+                  mt: 3,
+                  color: "#FF5A5F",
+                  borderColor: "#FF5A5F",
+                  "&:hover": {
+                    borderColor: "#FF3B39",
+                    backgroundColor: "rgba(255,90,95,0.1)"
+                  }
+                }}
+              >
+                New Search
+              </Button>
+            </>
+          ) : (
+            <Typography variant="h6">
+              Processing your search...
+            </Typography>
+          )}
+        </Box>
       ) : (
         <>
           <FormField
@@ -435,3 +512,4 @@ const Form = () => {
 };
 
 export default Form;
+
