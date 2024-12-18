@@ -52,7 +52,12 @@ const Form = () => {
     location: "",
     checkIn: "",
     checkOut: "",
-    guests: 1,
+    guests: {
+      adults: 1,
+      children: 0,
+      infants: 0,
+      pets: 0
+    },
     priceMin: "",
     priceMax: "",
     bedrooms: 1,
