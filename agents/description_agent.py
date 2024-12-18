@@ -160,7 +160,7 @@ class DescriptionAgent(BaseWorker):
                 raise ValueError("Model did not return a JSON list of integers.")
             return scores
         except json.JSONDecodeError:
-            raise ValueError("Failed to parse model output as JSON.")
+            raise ValueError(f"Failed to parse model output as JSON. Model output: {raw_output}")
 
     async def ainput(self, prompt: str) -> str:
         """Simulate user input for testing."""
