@@ -49,14 +49,14 @@ const formatSearchQuery = (formData) => {
     "&min_bedrooms=" +
     formData.bedrooms.toString() +
     "&min_bathrooms=" +
-    formData.bathRooms.toString() +
-    (formData.amenities.contains("Wifi") ? "&amenities%5B%5D=4" : "") +
-    (formData.amenities.contains("Kitchen") ? "&amenities%5B%5D=8" : "") +
-    (formData.amenities.contains("Washer") ? "&amenities%5B%5D=33" : "") +
-    (formData.amenities.contains("Dryer") ? "&amenities%5B%5D=34" : "") +
-    (formData.amenities.contains("Free Parking") ? "&amenities%5B%5D=9" : "") +
-    (formData.amenities.contains("Gym") ? "&amenities%5B%5D=15" : "") +
-    (formData.amenities.contains("Pool") ? "&amenities%5B%5D=7" : "") +
+    formData.bathrooms.toString() +
+    (formData.amenities.includes("Wifi") ? "&amenities%5B%5D=4" : "") +
+    (formData.amenities.includes("Kitchen") ? "&amenities%5B%5D=8" : "") +
+    (formData.amenities.includes("Washer") ? "&amenities%5B%5D=33" : "") +
+    (formData.amenities.includes("Dryer") ? "&amenities%5B%5D=34" : "") +
+    (formData.amenities.includes("Free Parking") ? "&amenities%5B%5D=9" : "") +
+    (formData.amenities.includes("Gym") ? "&amenities%5B%5D=15" : "") +
+    (formData.amenities.includes("Pool") ? "&amenities%5B%5D=7" : "") +
     (formData.guests.pets ? "&selected_filter_order%5B%5D=pets%3A1" : "");
 
   console.log(url);
