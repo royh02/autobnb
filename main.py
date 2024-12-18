@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import argparse
+import json
 
 from autogen_core import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
@@ -27,14 +28,15 @@ cors = CORS(app)
 @app.route('/api/search', methods=['POST'])
 def search():
     data = request.json
-    query = data.get('query')
-    start_page = data.get('start_page')
+    query = json.loads(data.get('query'))
+    start_page, additionalInfo = query['url'], query['additional_info']
+
     
     print('hihihi', query)
 
     file_path = 'user_request.txt'
     with open(file_path, 'w') as file:
-        file.write(query)
+        file.write(additionalInfo)
 
     asyncio.run(main(start_page, './logs', False, True))
 
@@ -54,9 +56,6 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
     # Register agents.
     await MultimodalWebSurfer.register(runtime, "WebSurfer", MultimodalWebSurfer)
     web_surfer = AgentProxy(AgentId("WebSurfer", "default"), runtime)
-
-    # await UserProxy.register(runtime, "UserProxy", UserProxy)
-    # user_proxy = AgentProxy(AgentId("UserProxy", "default"), runtime)
 
     await ListingFetchAgent.register(runtime, "ListingFetchAgent", ListingFetchAgent)
     listing_fetch = AgentProxy(AgentId("ListingFetchAgent", "default"), runtime)
@@ -79,7 +78,7 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[web_surfer, listing_fetch, init_agent, description_agent, image_analysis, ranking_agent],
+            agents=[web_surfer, listing_fetch, init_agent, listing_validator, image_analysis, ranking_agent],
             model_client=client
         )
     )

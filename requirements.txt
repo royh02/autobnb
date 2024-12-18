@@ -1,4 +1,2 @@
-autogen
-
 flask
 flask-cors

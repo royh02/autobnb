@@ -10,41 +10,70 @@ import {
 import FormField from "./FormField";
 
 // const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
-const amenitiesList = ["WiFi", "Kitchen", "Washer", "Dryer", "Free Parking", "Gym", "Pool"]
+const amenitiesList = [
+  "WiFi",
+  "Kitchen",
+  "Washer",
+  "Dryer",
+  "Free Parking",
+  "Gym",
+  "Pool",
+];
 // const viewsList = ["Bay", "Ocean", "Beach", "Garden", "Marina", "City"];
 
 const formatSearchQuery = (formData) => {
-  const url = "https://www.airbnb.com/s/" 
-    + formData.location 
-    + "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes"
-    + "&price_filter_input_type=2"
-    + "&channel=EXPLORE"
-    + "&date_picker_type=calendar"
-    + "&checkin=" + formData.checkIn.toString()
-    + "&checkout=" + formData.checkOut.toString()
-    + formData.guests.adults ? ("&adults=" + formData.guests.adults.toString()) : ""
-    + formData.guests.children ? ("&children=" + formData.guests.adults.toString()) : ""
-    + formData.guests.infants ? ("&infants=" + formData.guests.infants.toString()) : ""
-    + formData.guests.pets ? ("&pets=" + formData.guests.pets.toString()) : ""
-    + "&source=structured_search_input_header"
-    + "&search_type=filter_change"
-    + "&search_mode=regular_search"
-    + "&price_min=" + formData.priceMin.toString()
-    + "&price_max=" + formData.priceMax.toString()
-    + "&min_bedrooms=" + formData.bedrooms.toString()
-    + "&min_bathrooms=" + formData.bathRooms.toString()
-    + formData.amenities.contains("Wifi") ? ("&amenities%5B%5D=4") : ""
-    + formData.amenities.contains("Kitchen") ? ("&amenities%5B%5D=8") : ""
-    + formData.amenities.contains("Washer") ? ("&amenities%5B%5D=33") : ""
-    + formData.amenities.contains("Dryer") ? ("&amenities%5B%5D=34") : ""
-    + formData.amenities.contains("Free Parking") ? ("&amenities%5B%5D=9") : ""
-    + formData.amenities.contains("Gym") ? ("&amenities%5B%5D=15") : ""
-    + formData.amenities.contains("Pool") ? ("&amenities%5B%5D=7") : ""
-    + formData.guests.pets ? ("&selected_filter_order%5B%5D=pets%3A1") : ""
+  const url =
+    "https://www.airbnb.com/s/" +
+    formData.location +
+    "/homes?tab_id=home_tab&refinement_paths%5B%5D=%2Fhomes" +
+    "&price_filter_input_type=2" +
+    "&channel=EXPLORE" +
+    "&date_picker_type=calendar" +
+    "&checkin=" +
+    formData.checkIn.toString() +
+    "&checkout=" +
+    formData.checkOut.toString() +
+    formData.guests.adults
+      ? "&adults=" + formData.guests.adults.toString()
+      : "" + formData.guests.children
+      ? "&children=" + formData.guests.adults.toString()
+      : "" + formData.guests.infants
+      ? "&infants=" + formData.guests.infants.toString()
+      : "" + formData.guests.pets
+      ? "&pets=" + formData.guests.pets.toString()
+      : "" +
+        "&source=structured_search_input_header" +
+        "&search_type=filter_change" +
+        "&search_mode=regular_search" +
+        "&price_min=" +
+        formData.priceMin.toString() +
+        "&price_max=" +
+        formData.priceMax.toString() +
+        "&min_bedrooms=" +
+        formData.bedrooms.toString() +
+        "&min_bathrooms=" +
+        formData.bathRooms.toString() +
+        formData.amenities.contains("Wifi")
+      ? "&amenities%5B%5D=4"
+      : "" + formData.amenities.contains("Kitchen")
+      ? "&amenities%5B%5D=8"
+      : "" + formData.amenities.contains("Washer")
+      ? "&amenities%5B%5D=33"
+      : "" + formData.amenities.contains("Dryer")
+      ? "&amenities%5B%5D=34"
+      : "" + formData.amenities.contains("Free Parking")
+      ? "&amenities%5B%5D=9"
+      : "" + formData.amenities.contains("Gym")
+      ? "&amenities%5B%5D=15"
+      : "" + formData.amenities.contains("Pool")
+      ? "&amenities%5B%5D=7"
+      : "" + formData.guests.pets
+      ? "&selected_filter_order%5B%5D=pets%3A1"
+      : "";
 
-  const additionalInfo = formData.additionalInfo
-  
-  return additionalInfo + "___" + url
+  const additionalInfo = formData.additionalInfo;
+
+  return additionalInfo + "___" + url;
 };
 
 const Form = () => {
@@ -89,23 +118,23 @@ const Form = () => {
     setSubmitted(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5001/api/search', {
-        method: 'POST',
+      const response = await fetch("http://127.0.0.1:5001/api/search", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ query }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Search request failed');
+        throw new Error("Search request failed");
       }
-      
+
       const data = await response.json();
-      console.log('Search response:', data);
+      console.log("Search response:", data);
       setSubmitted(true);
     } catch (error) {
-      console.error('Error during search:', error);
+      console.error("Error during search:", error);
     }
   };
 
@@ -117,14 +146,14 @@ const Form = () => {
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        maxWidth: 1200, 
+        maxWidth: 1200,
         margin: "auto",
         padding: 4,
         backgroundColor: "#fff",
         borderRadius: 6,
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-        maxHeight: '80vh',
-        overflow: 'auto',
+        maxHeight: "80vh",
+        overflow: "auto",
       }}
     >
       <Typography
@@ -133,12 +162,12 @@ const Form = () => {
         sx={{
           fontWeight: "bold",
           textAlign: "center",
-          color: "#FF5A5F", 
+          color: "#FF5A5F",
         }}
       >
         AutoBnb: Airbnb Query Search
       </Typography>
-      
+
       {submitted ? (
         <Typography variant="h6" sx={{ textAlign: "center" }}>
           Success! Your search has been submitted.
@@ -188,7 +217,7 @@ const Form = () => {
               boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             }}
           />
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
             <FormField
               label="Adults"
               name="guests.adults"
@@ -247,7 +276,7 @@ const Form = () => {
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
             <FormField
               label="Min Price"
               name="priceMin"
@@ -255,7 +284,9 @@ const Form = () => {
               value={formValues.priceMin}
               onChange={handleChange}
               InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>
+                startAdornment: (
+                  <InputAdornment position="start">$</InputAdornment>
+                ),
               }}
               sx={{
                 borderRadius: "8px",
@@ -271,7 +302,9 @@ const Form = () => {
               value={formValues.priceMax}
               onChange={handleChange}
               InputProps={{
-                startAdornment: <InputAdornment position="start">$</InputAdornment>
+                startAdornment: (
+                  <InputAdornment position="start">$</InputAdornment>
+                ),
               }}
               sx={{
                 borderRadius: "8px",
@@ -282,7 +315,7 @@ const Form = () => {
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
             <FormField
               label="Bedrooms"
               name="bedrooms"
@@ -314,30 +347,35 @@ const Form = () => {
           </Box>
 
           <Box>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
+            <Typography
+              variant="subtitle1"
+              gutterBottom
+              sx={{ fontWeight: "bold", color: "#444" }}
+            >
               Amenities
             </Typography>
-            <Box sx={{
+            <Box
+              sx={{
                 borderRadius: "8px",
                 padding: "10px",
                 backgroundColor: "#f7f7f7",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              }}>
-
+              }}
+            >
               {amenitiesList.map((amenity, index) => (
                 <FormControlLabel
                   key={amenity}
                   control={
                     <Checkbox
                       id={`amenity-${index}`}
-                      name="amenities" 
+                      name="amenities"
                       value={amenity}
                       checked={formValues.amenities.includes(amenity)}
                       onChange={(e) => handleCheckboxChange(e, "amenities")}
                       sx={{
-                        color: "#444", 
-                        '&.Mui-checked': {
-                          color: "#FF5A5F", 
+                        color: "#444",
+                        "&.Mui-checked": {
+                          color: "#FF5A5F",
                         },
                         backgroundColor: "#f7f7f7",
                         borderRadius: "4px",
@@ -352,11 +390,15 @@ const Form = () => {
           </Box>
 
           <Box>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: '#444' }}>
+            <Typography
+              variant="subtitle1"
+              gutterBottom
+              sx={{ fontWeight: "bold", color: "#444" }}
+            >
               Additional Details
             </Typography>
             <FormField
-              id="additionalInfo" 
+              id="additionalInfo"
               name="additionalInfo"
               value={formValues.additionalInfo}
               onChange={handleChange}
@@ -381,14 +423,14 @@ const Form = () => {
               marginTop: 3,
               padding: "12px 24px",
               fontSize: "1rem",
-              fontWeight: 'bold', 
+              fontWeight: "bold",
               fontFamily: '"Circular", sans-serif',
               borderRadius: "8px",
-              backgroundColor: "#FF5A5F", 
-              color: "#ffffff", 
-              '&:hover': {
-                backgroundColor: "#FF3B39", 
-              }
+              backgroundColor: "#FF5A5F",
+              color: "#ffffff",
+              "&:hover": {
+                backgroundColor: "#FF3B39",
+              },
             }}
           >
             Search
