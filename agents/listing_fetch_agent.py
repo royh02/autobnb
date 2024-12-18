@@ -85,7 +85,7 @@ class ListingFetchAgent(BaseWorker):
             # """
             # Prepare context from chat history
             context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
-            extracted_url = self._parse_context(context)
+            extracted_url = await self._parse_context(context)
             listing_urls = extract_airbnb_listing_links(extracted_url)
             response = f"Here are the listing urls: {listing_urls}"
             return False, response

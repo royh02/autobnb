@@ -56,7 +56,7 @@ class DescriptionAgent(BaseWorker):
 
         try:
             context = " ".join([str(msg.content) for msg in self._chat_history[-5:]])
-            criteria, descriptions = self._parse_context(context)
+            criteria, descriptions = await self._parse_context(context)
             description_scores = await self._score_listings(criteria, descriptions)
             response = f"Here are the description scores: {description_scores}"
             return False, response
