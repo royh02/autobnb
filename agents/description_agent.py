@@ -154,7 +154,7 @@ class DescriptionAgent(BaseWorker):
         )
 
         # Extract response and parse as JSON
-        raw_output = response.choices[0].message['content'].strip()
+        raw_output = response.choices[0].message.content.strip()
         try:
             scores = json.loads(raw_output)
             if not isinstance(scores, list) or not all(isinstance(s, int) for s in scores):

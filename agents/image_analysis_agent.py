@@ -133,7 +133,7 @@ class ImageAnalysisAgent(BaseWorker):
 
             # Extract the score and append to the list
             try:
-                score = int(response.choices[0].message['content'].strip())
+                score = int(response.choices[0].message.content.strip())
                 scores.append(score)
             except (ValueError, KeyError):
                 scores.append(0)  # Default to 0 if parsing fails

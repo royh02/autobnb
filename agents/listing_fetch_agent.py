@@ -110,7 +110,7 @@ class ListingFetchAgent(BaseWorker):
             messages=[{"role": "user", "content": prompt}],
         )
 
-        extracted_url = response.choices[0].message['content'].strip()
+        extracted_url = response.choices[0].message.content.strip()
         return extracted_url 
 
     async def ainput(self, prompt: str) -> str:
