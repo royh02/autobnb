@@ -4,11 +4,10 @@ import {
   Button,
   Box,
   Typography,
-  FormControlLabel,
-  Checkbox,
-  InputAdornment,
+  InputBase,
+  styled,
+  TextField,
 } from "@mui/material";
-import FormField from "./FormField";
 
 // const amenitiesList = ["Kitchen", "Pool", "WiFi", "Washer", "Parking", "Gym"];
 const amenitiesList = [
@@ -70,6 +69,82 @@ const formatSearchQuery = (formData) => {
   return result;
 };
 
+const PageContainer = styled(Box)({
+  width: '100%', // Full viewport width
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexDirection: 'column',
+  margin: 0,
+  padding: 0,
+  gap: '20px',
+});
+
+const SearchContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start', // Align to the left
+  backgroundColor: '#ffffff',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  borderRadius: '40px',
+  width: '100%',
+  padding: '8px',
+  [theme.breakpoints.down('md')]: {
+    flexDirection: 'column',
+    borderRadius: '20px',
+  },
+}));
+
+const SearchField = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  flex: 1,
+  padding: '8px 16px',
+  flexDirection: 'column',
+  borderRight: '1px solid #ddd',
+  marginRight: '8px', 
+  '&:last-child': {
+    marginRight: '0', 
+  },
+  [theme.breakpoints.down('md')]: {
+    borderRight: 'none',
+    width: '100%',
+    marginRight: '0',
+  },
+}));
+
+const SearchInput = styled(InputBase)({
+  flex: 1,
+  fontSize: '14px',
+});
+
+const SearchInputField = ({ label, name, id, value, onChange, ...props }) => {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {label && <label htmlFor={id}>{label}</label>} 
+      <SearchInput
+        id={id}
+        name={name}
+        value={value}
+        onChange={onChange}
+        {...props}
+      />
+    </div>
+  );
+};
+
+// const SearchButton = styled(Button)({
+//   minWidth: '50px',
+//   height: '50px',
+//   borderRadius: '50%',
+//   backgroundColor: '#FF385C',
+//   color: 'white',
+//   '&:hover': {
+//     backgroundColor: '#E21D4F',
+//   },
+//   marginLeft: '8px',
+// });
+
 const Form = () => {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
@@ -96,16 +171,6 @@ const Form = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCheckboxChange = (e, category) => {
-    const { value, checked } = e.target;
-    setFormValues((prev) => ({
-      ...prev,
-      [category]: checked
-        ? [...prev[category], value]
-        : prev[category].filter((item) => item !== value),
-    }));
   };
 
   const handleSubmit = async (e) => {
@@ -151,349 +216,108 @@ const Form = () => {
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 3,
-        maxWidth: 1200,
-        margin: "auto",
-        padding: 4,
-        backgroundColor: "#fff",
-        borderRadius: 6,
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-        maxHeight: "80vh",
-        overflow: "auto",
-      }}
-    >
-      <Typography
-        variant="h4"
-        sx={{
-          fontWeight: "bold",
-          textAlign: "center",
-          color: "#FF5A5F",
-        }}
-      >
-        AutoBnb: Airbnb Query Search
-      </Typography>
+    <form onSubmit={handleSubmit}>
+      <PageContainer >
+        <SearchContainer>
+          <SearchField>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>Where</Typography>
+            <SearchInputField id="location" name="location" type="text" placeholder="Search destinations" value={formValues.location} onChange={handleChange} />
+          </SearchField>
 
-      {error && (
-        <Typography color="error" variant="h6" sx={{ textAlign: "center" }}>
-          {error}
-        </Typography>
-      )}
+          <SearchField>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>Check in</Typography>
+            <SearchInputField id="checkin" name="checkIn" type="date" placeholder="Add dates" value={formValues.checkIn} onChange={handleChange} />
+          </SearchField>
 
-      <FormField
-        label="Location"
-        name="location"
-        value={formValues.location}
-        onChange={handleChange}
-        required
-        InputLabelProps={{ shrink: true }}
-        placeholder="Berkeley, CA"
-        sx={{
-          borderRadius: "8px",
-          padding: "10px",
-          backgroundColor: "#f7f7f7", // Light gray background for inputs
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        }}
-      />
-      <FormField
-        label="Check-In Date"
-        name="checkIn"
-        type="date"
-        value={formValues.checkIn}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-        sx={{
-          borderRadius: "8px",
-          padding: "10px",
-          backgroundColor: "#f7f7f7",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        }}
-      />
-      <FormField
-        label="Check-Out Date"
-        name="checkOut"
-        type="date"
-        value={formValues.checkOut}
-        onChange={handleChange}
-        InputLabelProps={{ shrink: true }}
-        sx={{
-          borderRadius: "8px",
-          padding: "10px",
-          backgroundColor: "#f7f7f7",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        }}
-      />
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <FormField
-          label="Adults"
-          name="guests.adults"
-          type="number"
-          value={formValues.guests.adults}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <FormField
-          label="Children"
-          name="guests.children"
-          type="number"
-          value={formValues.guests.children}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <FormField
-          label="Infants"
-          name="guests.infants"
-          type="number"
-          value={formValues.guests.infants}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <FormField
-          label="Pets"
-          name="guests.pets"
-          type="number"
-          value={formValues.guests.pets}
-          onChange={handleChange}
-          InputLabelProps={{ shrink: true }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-      </Box>
-
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <FormField
-          label="Min Price"
-          name="priceMin"
-          type="number"
-          value={formValues.priceMin}
-          onChange={handleChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">$</InputAdornment>
-            ),
-          }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <FormField
-          label="Max Price"
-          name="priceMax"
-          type="number"
-          value={formValues.priceMax}
-          onChange={handleChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">$</InputAdornment>
-            ),
-          }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-      </Box>
-
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <FormField
-          label="Bedrooms"
-          name="bedrooms"
-          type="number"
-          value={formValues.bedrooms}
-          onChange={handleChange}
-          InputProps={{ inputProps: { min: 1 } }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-        <FormField
-          label="Bathrooms"
-          name="bathrooms"
-          type="number"
-          value={formValues.bathrooms}
-          onChange={handleChange}
-          InputProps={{ inputProps: { min: 1 } }}
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        />
-      </Box>
-
-      <Box>
-        <Typography
-          variant="subtitle1"
-          gutterBottom
-          sx={{ fontWeight: "bold", color: "#444" }}
-        >
-          Amenities
-        </Typography>
-        <Box
-          sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          {amenitiesList.map((amenity, index) => (
-            <FormControlLabel
-              key={amenity}
-              control={
-                <Checkbox
-                  id={`amenity-${index}`}
-                  name="amenities"
-                  value={amenity}
-                  checked={formValues.amenities.includes(amenity)}
-                  onChange={(e) => handleCheckboxChange(e, "amenities")}
-                  sx={{
-                    color: "#444",
-                    "&.Mui-checked": {
-                      color: "#FF5A5F",
-                    },
-                    backgroundColor: "#f7f7f7",
-                    borderRadius: "4px",
-                    padding: "6px",
-                  }}
-                />
-              }
-              label={amenity}
-            />
-          ))}
-        </Box>
-      </Box>
-
-      <Box>
-        <Typography
-          variant="subtitle1"
-          gutterBottom
-          sx={{ fontWeight: "bold", color: "#444" }}
-        >
-          Additional Details
-        </Typography>
-        <FormField
+          <SearchField  sx={{ borderRight: 'none'}}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>Check out</Typography>
+            <SearchInputField id="checkout" name="checkOut" type="date" placeholder="Add dates" value={formValues.checkOut} onChange={handleChange} />
+          </SearchField>
+        </SearchContainer>
+        <TextField
           id="additionalInfo"
           name="additionalInfo"
+          type="text"
+          placeholder="I want a..."
           value={formValues.additionalInfo}
           onChange={handleChange}
           multiline
-          rows={4}
-          fullWidth
-          placeholder="cozy cabin vibe"
+          rows={8}
           sx={{
-            borderRadius: "8px",
-            padding: "10px",
-            backgroundColor: "#f7f7f7",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            width: '80vw',   
+            boxSizing: 'border-box',
           }}
         />
-      </Box>
-
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={isLoading}
-        sx={{
-          marginTop: 3,
-          padding: "12px 24px",
-          fontSize: "1rem",
-          fontWeight: "bold",
-          fontFamily: '"Circular", sans-serif',
-          borderRadius: "8px",
-          backgroundColor: isLoading ? "#ff8a8c" : "#FF5A5F",
-          color: "#ffffff",
-          position: "relative",
-          transition: "all 0.3s ease",
-          "&:hover": {
-            backgroundColor: "#FF3B39",
-          },
-          "&:disabled": {
-            backgroundColor: "#ff8a8c",
+        <Button
+          type="submit"
+          variant="contained"
+          disabled={isLoading}
+          sx={{
+            padding: "12px 24px",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            fontFamily: '"Circular", sans-serif',
+            borderRadius: "8px",
+            backgroundColor: isLoading ? "#ff8a8c" : "#FF5A5F",
             color: "#ffffff",
-          }
-        }}
-      >
-        {isLoading ? (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            gap: 1
-          }}>
-            <span className="loading-dots">Searching</span>
-            <Box sx={{
-              display: 'inline-flex',
-              gap: '4px',
+            position: "relative",
+            transition: "all 0.3s ease",
+            "&:hover": {
+              backgroundColor: "#FF3B39",
+            },
+            "&:disabled": {
+              backgroundColor: "#ff8a8c",
+              color: "#ffffff",
+            }
+          }}
+        >
+          {isLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
               alignItems: 'center',
-              '& .dot': {
-                width: '4px',
-                height: '4px',
-                backgroundColor: '#ffffff',
-                borderRadius: '50%',
-                animation: 'bounce 1.4s infinite ease-in-out both',
-                '&:nth-of-type(1)': {
-                  animationDelay: '-0.32s'
-                },
-                '&:nth-of-type(2)': {
-                  animationDelay: '-0.16s'
-                },
-                '@keyframes bounce': {
-                  '0%, 80%, 100%': {
-                    transform: 'scale(0)'
+              gap: 1
+            }}>
+              <span className="loading-dots">Searching</span>
+              <Box sx={{
+                display: 'inline-flex',
+                gap: '4px',
+                alignItems: 'center',
+                '& .dot': {
+                  width: '4px',
+                  height: '4px',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '50%',
+                  animation: 'bounce 1.4s infinite ease-in-out both',
+                  '&:nth-of-type(1)': {
+                    animationDelay: '-0.32s'
                   },
-                  '40%': {
-                    transform: 'scale(1)'
+                  '&:nth-of-type(2)': {
+                    animationDelay: '-0.16s'
+                  },
+                  '@keyframes bounce': {
+                    '0%, 80%, 100%': {
+                      transform: 'scale(0)'
+                    },
+                    '40%': {
+                      transform: 'scale(1)'
+                    }
                   }
                 }
-              }
-            }}>
-              <span className="dot" />
-              <span className="dot" />
-              <span className="dot" />
+              }}>
+                <span className="dot" />
+                <span className="dot" />
+                <span className="dot" />
+              </Box>
             </Box>
-          </Box>
-        ) : (
-          "Search"
-        )}
-      </Button>
-    </Box>
+          ) : (
+            "Search"
+          )}
+        </Button>
+      </PageContainer>
+    </form>
   );
 };
 
+
 export default Form;
+

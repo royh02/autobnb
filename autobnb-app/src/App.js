@@ -8,31 +8,31 @@ function App() {
   return (
     <Router>
       <Container
-        maxWidth="sm"
         style={{
+          width: "100vw",
           height: "100vh",
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <Box
+        <Typography
+          variant="h4"
           sx={{
-            width: "100%",
-            backgroundColor: "#fff",
-            padding: 3,
-            borderRadius: 2,
-            boxShadow: 3,
+            fontWeight: "bold",
+            textAlign: "center",
+            color: "#FF5A5F",
+            marginBottom: "20px",
           }}
         >
-          {/* <Typography variant="h4" component="h1" gutterBottom align="center">
-            AutoBnb: Airbnb Query Search
-          </Typography> */}
-          <Routes>
-            <Route path="/" element={<Form />} />
-            <Route path="/results" element={<Results />} />
-          </Routes>
-        </Box>
+          AutoBnb: Airbnb Query Search
+        </Typography>
+        
+        <Routes>
+          <Route path="/" element={<Form />} />
+          <Route path="/results" element={<Results />} />
+        </Routes>
       </Container>
     </Router>
   );
