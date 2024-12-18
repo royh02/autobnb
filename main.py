@@ -88,7 +88,7 @@ async def main(start_page: str, logs_dir: str, hil_mode: bool, save_screenshots:
         runtime, 
         "orchestrator", 
         lambda: LedgerOrchestrator(
-            agents=[init_agent, listing_fetch, browsing_agent, description_agent, ranking_agent],
+            agents=[init_agent, listing_fetch, browsing_agent, description_agent, image_analysis, ranking_agent],
             model_client=client,
             max_stalls_before_replan=MAX_LISTING_COUNT,
         )

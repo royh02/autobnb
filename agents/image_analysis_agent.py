@@ -17,7 +17,12 @@ from openai import AsyncOpenAI
 
 class ImageInput(BaseModel):
     criteria: str
-    image_urls: list[str]
+    listing_urls: list[str]
+    image_urls: list[list[str]]
+
+class ImageOutput(BaseModel):
+    score: int
+    reasoning: str
 
 @default_subscription
 class ImageAnalysisAgent(BaseWorker):
@@ -49,9 +54,16 @@ class ImageAnalysisAgent(BaseWorker):
         try:
             # Prepare context from chat history
             context = " ".join([str(msg.content) for msg in self._chat_history])
-            criteria, image_urls = await self._parse_context(context)
-            image_scores = await self._score_images(criteria, image_urls)
-            response = f"Here are the image scores: {image_scores}"
+            criteria, listing_urls, image_urls = await self._parse_context(context)
+            image_outputs = await self._score_images(criteria, image_urls)
+            
+            response = f"Here are the image scores:\n\n"
+            for i, image_output in enumerate(image_outputs):
+                response += f"URL: {listing_urls[i]}\n"
+                response += f"Score: {image_output.score}\n"
+                response += f"Reasoning: {image_output.reasoning}\n"
+                response += f"\n"
+
             return False, response
         
         except Exception as e:
@@ -60,12 +72,13 @@ class ImageAnalysisAgent(BaseWorker):
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a dictionary with two fields:  
+        Your task is to parse the chat history and extract a dictionary with three fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **image_urls**: A list of image urls returned by the browser agent.
+        2. **listing_urls**: A list of Airbnb URLs.
+        3. **image_urls**: A list of lists of image urls returned by the browser agent. Each listing can have multiple images.
 
-        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
+        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the listing_urls and image_urls are aligned such that an index in listing_urls corresponds to an index in image_urls.
 
         Chat history:
         {context}
@@ -77,11 +90,11 @@ class ImageAnalysisAgent(BaseWorker):
             messages=[{"role": "user", "content": prompt}],
             response_format=ImageInput,
         )
-
         image_input = response.choices[0].message.parsed
         criteria = image_input.criteria
+        listing_urls = image_input.listing_urls
         image_urls = image_input.image_urls
-        return criteria, image_urls
+        return criteria, listing_urls, image_urls
     
     async def _score_images(self, criteria: str, image_urls: list[list[str]]) -> list[int]:
         """
@@ -105,7 +118,7 @@ class ImageAnalysisAgent(BaseWorker):
         You will be provided the images. Output only your score as an integer from 1 to 5, 5 being the highest.
         """.strip()
 
-        scores = []
+        image_outputs = []
 
         # Iterate through each listing's image URLs
         for listing_images in image_urls:
@@ -125,21 +138,17 @@ class ImageAnalysisAgent(BaseWorker):
                 )
 
             # Call the OpenAI API
-            response = await self._openai_client.chat.completions.create(
+            response = await self._openai_client.beta.chat.completions.parse(
                 model=MODEL_NAME,
                 messages=messages,
-                max_tokens=10,
-                temperature=TEMPERATURE,
+                response_format=ImageOutput,
             )
 
             # Extract the score and append to the list
-            try:
-                score = int(response.choices[0].message.content.strip())
-                scores.append(score)
-            except (ValueError, KeyError):
-                scores.append(0)  # Default to 0 if parsing fails
+            image_output = response.choices[0].message.parsed
+            image_outputs.append(image_output)
 
-        return scores
+        return image_outputs
 
     async def ainput(self, prompt: str) -> str:
         """

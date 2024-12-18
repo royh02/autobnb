@@ -18,7 +18,15 @@ from openai import AsyncOpenAI
 
 class DescriptionInput(BaseModel):
     criteria: str
+    listing_urls: list[str]
     descriptions: list[str]
+
+class DescriptionOutput(BaseModel):
+    score: int
+    reasoning: str
+
+class DescriptionOutputs(BaseModel):
+    outputs: list[DescriptionOutput]
 
 @default_subscription
 class DescriptionAgent(BaseWorker):
@@ -57,9 +65,16 @@ class DescriptionAgent(BaseWorker):
 
         try:
             context = " ".join([str(msg.content) for msg in self._chat_history])
-            criteria, descriptions = await self._parse_context(context)
-            description_scores = await self._score_listings(criteria, descriptions)
-            response = f"Here are the description scores: {description_scores}"
+            criteria, listing_urls, descriptions = await self._parse_context(context)
+            description_outputs = await self._score_listings(criteria, descriptions)
+
+            response = f"Here are the description scores:\n\n"
+            for i, description_output in enumerate(description_outputs.outputs):
+                response += f"URL: {listing_urls[i]}\n"
+                response += f"Score: {description_output.score}\n"
+                response += f"Reasoning: {description_output.reasoning}\n"
+                response += f"\n"
+
             return False, response
 
         except Exception as e:
@@ -68,12 +83,13 @@ class DescriptionAgent(BaseWorker):
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a dictionary with two fields:  
+        Your task is to parse the chat history and extract a dictionary with three fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **descriptions**: A list of Airbnb listing descriptions output by the browser agent.
+        2. **listing_urls**: A list of Airbnb URLs.
+        3. **descriptions**: A list of Airbnb listing descriptions output by the browser agent.
 
-        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history.
+        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the listing_urls and descriptions are aligned such that an index in listing_urls corresponds to an index in descriptions.
 
         Chat history:
         {context}
@@ -87,14 +103,15 @@ class DescriptionAgent(BaseWorker):
         )
         decription_input = response.choices[0].message.parsed
         criteria = decription_input.criteria
+        listing_urls = decription_input.listing_urls
         descriptions = decription_input.descriptions
-        return criteria, descriptions
+        return criteria, listing_urls, descriptions
 
     async def _score_listings(
         self, 
         criteria: str, 
         descriptions: List[str]
-    ) -> List[int]:
+    ) -> DescriptionOutputs:
         """
         Uses a model to score the listings based on the given criteria.
         The model is instructed to return a JSON array of integers (1-5) only.
@@ -124,11 +141,7 @@ class DescriptionAgent(BaseWorker):
 
         Keep in mind that user criteria may be vague or broad. If the user says “affordable” without specifying a price range, consider what might be reasonable in the given context. If the user says “close to the beach,” and the listing is within walking distance, treat that as a positive match.
 
-        2. Assign a score from 1 to 5 (5 is best) for each listing.
-
-        DO NOT provide any explanations or text other than a JSON array of integers.
-        For example, if there are 3 listings and their scores are 3, 5, and 2, return:
-        [3,5,2]
+        2. Assign a score from 1 to 5 (5 is best) for each listing and provide a brief justification.
 
         User criteria:
         {criteria}
@@ -145,23 +158,12 @@ class DescriptionAgent(BaseWorker):
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": listings_str},
         ]
-
-        response = await self._openai_client.chat.completions.create(
-            model=MODEL_NAME, 
+        response = await self._openai_client.beta.chat.completions.parse(
+            model=MODEL_NAME,
             messages=messages,
-            max_tokens=50,
-            temperature=TEMPERATURE,
+            response_format=DescriptionOutputs,
         )
-
-        # Extract response and parse as JSON
-        raw_output = response.choices[0].message.content.strip()
-        try:
-            scores = json.loads(raw_output)
-            if not isinstance(scores, list) or not all(isinstance(s, int) for s in scores):
-                raise ValueError("Model did not return a JSON list of integers.")
-            return scores
-        except json.JSONDecodeError:
-            raise ValueError(f"Failed to parse model output as JSON. Model output: {raw_output}")
+        return response.choices[0].message.parsed
 
     async def ainput(self, prompt: str) -> str:
         """Simulate user input for testing."""
