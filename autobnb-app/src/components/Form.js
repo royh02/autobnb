@@ -148,38 +148,38 @@ const Form = () => {
     const query = formatSearchQuery(formValues);
     setIsLoading(true);
     setError(null);
-    const data = [
-      {
-        "url": "https://www.airbnb.com/rooms/35949681",
-        "summary": "This charming Airbnb listing offers an exceptional experience with its modern amenities and thoughtful design. Recent guests have praised its spotless cleanliness and attention to detail. The host maintains excellent communication and has earned a reputation for going above and beyond to ensure guest comfort. The property features stylish furnishings and a well-equipped kitchen, making it perfect for both short and extended stays. The location provides a perfect balance of tranquility and accessibility to local attractions."
-      },
-      {
-        "url": "https://www.airbnb.com/rooms/955858690980318819",
-        "summary": "Guests consistently rate this property highly for its stunning views and prime location. The space is beautifully decorated with a mix of contemporary and classic elements, creating a warm and inviting atmosphere. Previous visitors have particularly enjoyed the spacious layout and premium amenities. The host is known for providing personalized recommendations for local experiences and maintaining the property to high standards. The outdoor space has been highlighted as a particular highlight, perfect for morning coffee or evening relaxation."
-      },
-      {
-        "url": "https://www.airbnb.com/rooms/1238548906544868515",
-        "summary": "This unique property stands out for its exceptional interior design and thoughtful touches throughout. Reviews frequently mention the comfortable bedding and well-appointed living spaces. The kitchen has received praise for being fully equipped with high-end appliances. Located in a quiet neighborhood, guests appreciate the peaceful environment while still being close to urban conveniences. The host's attention to detail and quick response time have been consistently noted in positive reviews."
-      },
-      {
-        "url": "https://www.airbnb.com/rooms/940785157628196076",
-        "summary": "A truly remarkable space that combines comfort with elegance. Past guests have highlighted the property's excellent natural lighting and open floor plan. The bedrooms are described as peaceful retreats with premium mattresses and linens. The bathroom features modern fixtures and luxury toiletries. The host has earned a Superhost status for their exceptional service and maintenance of the property. The location offers easy access to both local attractions and essential amenities."
-      },
-      {
-        "url": "https://www.airbnb.com/rooms/1051753142382397501",
-        "summary": "This listing has garnered praise for its perfect blend of comfort and sophistication. Guests particularly enjoy the well-maintained outdoor space and modern amenities. The property features high-end finishes throughout, from the custom kitchen to the spa-like bathroom. Reviews consistently mention the exceptional cleanliness and the host's professional yet warm approach. The neighborhood offers a perfect mix of residential charm and convenient access to local highlights."
-      },
-      {
-        "url": "https://www.airbnb.com/rooms/47357567",
-        "summary": "A standout property that receives consistent five-star reviews for its impeccable presentation and comfort. The space has been thoughtfully designed with both style and functionality in mind. Guests frequently comment on the comfortable furniture and high-quality bedding. The kitchen is well-stocked with everything needed for meal preparation. The host is praised for their attentiveness and the property's immaculate maintenance. The location provides easy access to local attractions while maintaining a peaceful atmosphere."
-      }
-    ];
-    if (Array.isArray(data)) {
-      // Navigate to results page with the URLs
-      navigate('/results', { state: { data } });
-    } else {
-      setError("Invalid response format from server");
-    }
+    // const data = [
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/35949681",
+    //     "summary": "This charming Airbnb listing offers an exceptional experience with its modern amenities and thoughtful design. Recent guests have praised its spotless cleanliness and attention to detail. The host maintains excellent communication and has earned a reputation for going above and beyond to ensure guest comfort. The property features stylish furnishings and a well-equipped kitchen, making it perfect for both short and extended stays. The location provides a perfect balance of tranquility and accessibility to local attractions."
+    //   },
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/955858690980318819",
+    //     "summary": "Guests consistently rate this property highly for its stunning views and prime location. The space is beautifully decorated with a mix of contemporary and classic elements, creating a warm and inviting atmosphere. Previous visitors have particularly enjoyed the spacious layout and premium amenities. The host is known for providing personalized recommendations for local experiences and maintaining the property to high standards. The outdoor space has been highlighted as a particular highlight, perfect for morning coffee or evening relaxation."
+    //   },
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/1238548906544868515",
+    //     "summary": "This unique property stands out for its exceptional interior design and thoughtful touches throughout. Reviews frequently mention the comfortable bedding and well-appointed living spaces. The kitchen has received praise for being fully equipped with high-end appliances. Located in a quiet neighborhood, guests appreciate the peaceful environment while still being close to urban conveniences. The host's attention to detail and quick response time have been consistently noted in positive reviews."
+    //   },
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/940785157628196076",
+    //     "summary": "A truly remarkable space that combines comfort with elegance. Past guests have highlighted the property's excellent natural lighting and open floor plan. The bedrooms are described as peaceful retreats with premium mattresses and linens. The bathroom features modern fixtures and luxury toiletries. The host has earned a Superhost status for their exceptional service and maintenance of the property. The location offers easy access to both local attractions and essential amenities."
+    //   },
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/1051753142382397501",
+    //     "summary": "This listing has garnered praise for its perfect blend of comfort and sophistication. Guests particularly enjoy the well-maintained outdoor space and modern amenities. The property features high-end finishes throughout, from the custom kitchen to the spa-like bathroom. Reviews consistently mention the exceptional cleanliness and the host's professional yet warm approach. The neighborhood offers a perfect mix of residential charm and convenient access to local highlights."
+    //   },
+    //   {
+    //     "url": "https://www.airbnb.com/rooms/47357567",
+    //     "summary": "A standout property that receives consistent five-star reviews for its impeccable presentation and comfort. The space has been thoughtfully designed with both style and functionality in mind. Guests frequently comment on the comfortable furniture and high-quality bedding. The kitchen is well-stocked with everything needed for meal preparation. The host is praised for their attentiveness and the property's immaculate maintenance. The location provides easy access to local attractions while maintaining a peaceful atmosphere."
+    //   }
+    // ];
+    // if (Array.isArray(data)) {
+    //   // Navigate to results page with the URLs
+    //   navigate('/results', { state: { data } });
+    // } else {
+    //   setError("Invalid response format from server");
+    // }
 
     try {
       const response = await fetch("http://127.0.0.1:5001/api/search", {
@@ -194,14 +194,14 @@ const Form = () => {
         throw new Error("Search request failed");
       }
 
-      // const data = await response.json();
-      // // const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
-      // if (Array.isArray(data.sorted_listings)) {
-      //   // Navigate to results page with the URLs
-      //   navigate('/results', { state: { urls: data.sorted_listings } });
-      // } else {
-      //   setError("Invalid response format from server");
-      // }
+      const data = await response.json();
+      // const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
+      if (Array.isArray(data.sorted_listings)) {
+        // Navigate to results page with the URLs
+        navigate('/results', { state: { urls: data.sorted_listings } });
+      } else {
+        setError("Invalid response format from server");
+      }
     } catch (error) {
       console.error("Error during search:", error);
       setError(error.message);
