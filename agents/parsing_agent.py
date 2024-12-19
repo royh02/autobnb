@@ -95,7 +95,7 @@ class ParsingAgent(BaseWorker):
 
     async def _extract_fields(self, criteria: str) -> dict:
         prompt = f"""
-        Extract the relevant fields from the user's preferences. Leave any fields that are not mentioned as null.
+        Extract the relevant fields from the user's preferences. Do not output any fields that are not mentioned.
 
         Field descriptions:
         1. location: A string containing the location the user wants the AirBNB
@@ -147,15 +147,15 @@ class ParsingAgent(BaseWorker):
             + "&search_mode=regular_search"
             + (f"&price_min={data['priceMin']}" if data.get("priceMin", None) else "")
             + (f"&price_max={data['priceMax']}" if data.get("priceMax", None) else "")
-            + f"&min_bedrooms={data['bedrooms']}"
-            + f"&min_bathrooms={data['bathrooms']}"
-            + ("&amenities%5B%5D=4" if "Wifi" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=8" if "Kitchen" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=33" if "Washer" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=34" if "Dryer" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=9" if "Free Parking" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=15" if "Gym" in data.get("amenities", None) else "")
-            + ("&amenities%5B%5D=7" if "Pool" in data.get("amenities", None) else "")
+            + (f"&min_bedrooms={data['bedrooms']}" if data.get("bedrooms", None) else "")
+            + (f"&min_bathrooms={data['bathrooms']}" if data.get("bathrooms", None) else "")
+            + ("&amenities%5B%5D=4" if data.get("amenities", None) and "Wifi" in data["amenities"] else "")
+            + ("&amenities%5B%5D=8" if data.get("amenities", None) and "Kitchen" in data["amenities"] else "")
+            + ("&amenities%5B%5D=33" if data.get("amenities", None) and "Washer" in data["amenities"] else "")
+            + ("&amenities%5B%5D=34" if data.get("amenities", None) and "Dryer" in data["amenities"] else "")
+            + ("&amenities%5B%5D=9" if data.get("amenities", None) and "Free Parking" in data["amenities"] else "")
+            + ("&amenities%5B%5D=15" if data.get("amenities", None) and "Gym" in data["amenities"] else "")
+            + ("&amenities%5B%5D=7" if data.get("amenities", None) and "Pool" in data["amenities"] else "")
             + ("&selected_filter_order%5B%5D=pets%3A1" if data.get("guestsPets", None) else "")
         )
         return url

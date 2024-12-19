@@ -14,3 +14,6 @@ FLASK_PORT = 5001
 # Weights for ranking
 DESCRIPTION_WEIGHT = 0.8
 IMAGE_WEIGHT = 1 - DESCRIPTION_WEIGHT
+
+# Database stuff
+DATABASE = 'database.db'

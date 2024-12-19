@@ -1,0 +1,7 @@
+-- schema.sql
+DROP TABLE IF EXISTS my_table;
+
+CREATE TABLE my_table (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data TEXT NOT NULL
+);

@@ -104,12 +104,45 @@ const Form = () => {
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleGenerateQuery = async (e) => {
+    e.preventDefault();
+    setIsGenerating(true);
+    setError(null);
+  
+    try {
+      const response = await fetch("http://127.0.0.1:5001/api/generate_query", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to generate query");
+      }
+  
+      const data = await response.json();
+  
+      setFormValues((prevFormValues) => ({
+        ...prevFormValues,
+        additionalInfo: data.example_query.replace(/^"(.+)"$/, '$1'),
+      }));
+  
+    } catch (error) {
+      console.error("Error generating query:", error);
+      setError("Failed to generate query. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     const query = formatSearchQuery(formValues);
@@ -185,71 +218,142 @@ const Form = () => {
             boxSizing: 'border-box',
           }}
         />
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={isLoading}
-          sx={{
-            padding: "12px 24px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            fontFamily: '"Circular", sans-serif',
-            borderRadius: "8px",
-            backgroundColor: isLoading ? "#ff8a8c" : "#FF5A5F",
-            color: "#ffffff",
-            position: "relative",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              backgroundColor: "#FF3B39",
-            },
-            "&:disabled": {
-              backgroundColor: "#ff8a8c",
+        <div sx={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={isLoading}
+            sx={{
+              padding: "12px 24px",
+              margin: "12px 12px",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              fontFamily: '"Circular", sans-serif',
+              borderRadius: "8px",
+              backgroundColor: isLoading ? "#ff8a8c" : "#FF5A5F",
               color: "#ffffff",
-            }
-          }}
-        >
-          {isLoading ? (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              gap: 1
-            }}>
-              <span className="loading-dots">Searching</span>
-              <Box sx={{
-                display: 'inline-flex',
-                gap: '4px',
+              position: "relative",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: "#FF3B39",
+              },
+              "&:disabled": {
+                backgroundColor: "#ff8a8c",
+                color: "#ffffff",
+              }
+            }}
+          >
+            {isLoading ? (
+              <Box sx={{ 
+                display: 'flex', 
                 alignItems: 'center',
-                '& .dot': {
-                  width: '4px',
-                  height: '4px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '50%',
-                  animation: 'bounce 1.4s infinite ease-in-out both',
-                  '&:nth-of-type(1)': {
-                    animationDelay: '-0.32s'
-                  },
-                  '&:nth-of-type(2)': {
-                    animationDelay: '-0.16s'
-                  },
-                  '@keyframes bounce': {
-                    '0%, 80%, 100%': {
-                      transform: 'scale(0)'
+                gap: 1
+              }}>
+                <span className="loading-dots">Searching</span>
+                <Box sx={{
+                  display: 'inline-flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  '& .dot': {
+                    width: '4px',
+                    height: '4px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '50%',
+                    animation: 'bounce 1.4s infinite ease-in-out both',
+                    '&:nth-of-type(1)': {
+                      animationDelay: '-0.32s'
                     },
-                    '40%': {
-                      transform: 'scale(1)'
+                    '&:nth-of-type(2)': {
+                      animationDelay: '-0.16s'
+                    },
+                    '@keyframes bounce': {
+                      '0%, 80%, 100%': {
+                        transform: 'scale(0)'
+                      },
+                      '40%': {
+                        transform: 'scale(1)'
+                      }
                     }
                   }
-                }
-              }}>
-                <span className="dot" />
-                <span className="dot" />
-                <span className="dot" />
+                }}>
+                  <span className="dot" />
+                  <span className="dot" />
+                  <span className="dot" />
+                </Box>
               </Box>
-            </Box>
-          ) : (
-            "Search"
-          )}
-        </Button>
+            ) : (
+              "Search"
+            )}
+          </Button>
+          
+          <Button
+            type="button"
+            variant="contained"
+            onClick={handleGenerateQuery}
+            disabled={isGenerating}
+            sx={{
+              padding: "12px 24px",
+              margin: "12px 12px",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              fontFamily: '"Circular", sans-serif',
+              borderRadius: "8px",
+              backgroundColor: isGenerating ? "#ff8a8c" : "#FF5A5F",
+              color: "#ffffff",
+              position: "relative",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                backgroundColor: "#FF3B39",
+              },
+              "&:disabled": {
+                backgroundColor: "#ff8a8c",
+                color: "#ffffff",
+              }
+            }}
+          >
+            {isGenerating ? (
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: 1
+              }}>
+                <span className="loading-dots">I'm Feeling Lucky!</span>
+                <Box sx={{
+                  display: 'inline-flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                  '& .dot': {
+                    width: '4px',
+                    height: '4px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '50%',
+                    animation: 'bounce 1.4s infinite ease-in-out both',
+                    '&:nth-of-type(1)': {
+                      animationDelay: '-0.32s'
+                    },
+                    '&:nth-of-type(2)': {
+                      animationDelay: '-0.16s'
+                    },
+                    '@keyframes bounce': {
+                      '0%, 80%, 100%': {
+                        transform: 'scale(0)'
+                      },
+                      '40%': {
+                        transform: 'scale(1)'
+                      }
+                    }
+                  }
+                }}>
+                  <span className="dot" />
+                  <span className="dot" />
+                  <span className="dot" />
+                </Box>
+              </Box>
+            ) : (
+              "I'm Feeling Lucky!"
+            )}
+          </Button>
+        </div>
       </PageContainer>
     </form>
   );
