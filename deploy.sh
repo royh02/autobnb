@@ -16,6 +16,7 @@ echo "Installing backend dependencies from requirements.txt..."
 pip install -r requirements.txt
 
 # Step 3: Clone and install additional backend dependencies
+rm -rf autogen
 REPO_URL="https://github.com/microsoft/autogen.git"
 echo "Cloning repository from $REPO_URL..."
 git clone $REPO_URL

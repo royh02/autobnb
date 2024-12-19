@@ -70,10 +70,7 @@ async def extract_airbnb_listing_links(url):
 
 @default_subscription
 class ListingFetchAgent(BaseWorker):
-    """An agent that processes user input and fetches Airbnb listings."""
-
-    DEFAULT_DESCRIPTION = """You are an intelligent agent designed to fetch listings on the current page.
-    Display results with a hyperlink to each relevant Airbnb listing."""
+    DEFAULT_DESCRIPTION = """An agent that finds Airbnb listing links for the Browser Agent from the base URL from the Init Agent."""
 
     def __init__(
         self,

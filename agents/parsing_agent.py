@@ -40,7 +40,6 @@ class ParsingOutput(BaseModel):
 
 @default_subscription
 class ParsingAgent(BaseWorker):
-    """An agent that parses the user's preferences into a formatted dictionary to construct the URL for the start page for the search."""
     DEFAULT_DESCRIPTION = "An agent that parses the user's preferences into a formatted dictionary to construct the URL for the start page for the search."
     
     def __init__(

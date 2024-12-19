@@ -34,7 +34,6 @@ class BrowsingInput(BaseModel):
 
 @default_subscription
 class BrowsingAgent(BaseWorker):
-    """An agent that visits URLs provided by the Listing Fetch Agent and generates a summary of each listing."""
     DEFAULT_DESCRIPTION = "An agent that visits URLs provided by the Listing Fetch Agent and generates a summary of each listing."
     
     def __init__(

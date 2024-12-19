@@ -12,8 +12,6 @@ from autogen_magentic_one.agents.base_worker import BaseWorker
 
 @default_subscription
 class InitAgent(BaseWorker):
-    """An agent that processes user input and fetches Airbnb listings."""
-
     DEFAULT_DESCRIPTION = """You are a proxy agent that receives instructions and passes it to the orchestrator to use to start the process."""
 
     def __init__(
