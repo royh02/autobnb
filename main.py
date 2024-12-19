@@ -219,6 +219,12 @@ def search():
 
 @app.route('/api/generate_query', methods=['POST'])
 def generate_query():
+    data = request.json
+    query = json.loads(data.get('query'))
+    user_prefs = query['user_pref']
+    if user_prefs['key']:
+        os.environ["OPENAI_API_KEY"] = user_prefs['key']
+    
     prompt = f"""
         Your task is to generate a personalized accommodation query based on the following criteria:
         1. Location/Vibe: Include a specific setting (e.g. mountains, beachfront, urban) and describe the atmosphere (e.g. cozy, modern, lively)

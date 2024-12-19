@@ -114,15 +114,17 @@ const Form = () => {
 
   const handleGenerateQuery = async (e) => {
     e.preventDefault();
+    const query = formatSearchQuery(formValues);
     setIsGenerating(true);
     setError(null);
   
     try {
-      const response = await fetch("http://127.0.0.1:5001/api/generate_query", {
+      const response = await fetch("/api/generate_query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ query }),
       });
   
       if (!response.ok) {
@@ -183,7 +185,7 @@ const Form = () => {
     // }
 
     try {
-      const response = await fetch("http://127.0.0.1:5001/api/search", {
+      const response = await fetch("/api/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
