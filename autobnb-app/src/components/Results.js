@@ -1,37 +1,147 @@
-import React, { useState } from 'react';
-import { Box, Typography, Button, AppBar, Toolbar, Container, Link, Tooltip, CircularProgress } from "@mui/material";
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Box, Typography, Button, AppBar, Toolbar, Container, Link, CircularProgress, IconButton, Grid } from "@mui/material";
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 const Results = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const [hoveredUrl, setHoveredUrl] = useState(null);
-  const [loadingImages, setLoadingImages] = useState({});
+  const navigate = useNavigate();
 
-  const urls = location.state?.urls || [];
+  // Check if we have data in the location state
+  if (!location.state || !location.state.data) {
+    return <Navigate to="/" replace />;
+  }
 
-  const handleBack = () => {
-    navigate('/');
+  const listings = location.state.data;
+
+  return (
+    <Box sx={{ 
+      width: '100%', 
+      minHeight: '100vh', 
+      bgcolor: 'background.default'
+    }}>
+      {/* Header */}
+      <AppBar position="fixed" sx={{ bgcolor: 'white' }}>
+        <Toolbar>
+          <Button
+            onClick={() => navigate('/')}
+            startIcon={<ArrowBackIcon />}
+            sx={{ color: '#FF5A5F' }}
+          >
+            Back to Search
+          </Button>
+        </Toolbar>
+      </AppBar>
+
+      {/* Main Content */}
+      <Container maxWidth="xl" sx={{ pt: 10, pb: 4 }}>
+        <Grid container spacing={3}>
+          {listings.map((listing, index) => (
+            <Grid item xs={12} md={6} key={listing.url}>
+              <ListingCell url={listing.url} rank={index + 1} summary={listing.summary} />
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
+};
+
+const ListingCell = ({ url, rank, summary }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [images, setImages] = useState([]);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      if (fetchedRef.current) return;
+      fetchedRef.current = true;
+      
+      try {
+        setIsLoading(true);
+        const response = await fetch(`http://127.0.0.1:5001/preview/${encodeURIComponent(url)}`);
+        if (response.ok) {
+          const imageUrls = await response.json();
+          if (imageUrls && imageUrls.length > 0) {
+            setImages(imageUrls);
+          } else {
+            setHasError(true);
+          }
+        } else {
+          setHasError(true);
+        }
+      } catch (error) {
+        console.error('Error fetching images:', error);
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadImages();
+  }, [url]);
+
+  const handlePrevImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
   };
 
-  const PreviewTooltip = ({ url }) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
+  const handleNextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+  };
 
-    return (
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        overflow: 'hidden',
+        boxShadow: 3,
+      }}
+    >
+      {/* Rank Badge */}
       <Box
         sx={{
-          width: 400,
-          height: 300,
-          bgcolor: 'background.paper',
-          borderRadius: 2,
-          overflow: 'hidden',
-          boxShadow: 3,
-          position: 'relative',
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          zIndex: 2,
+          display: 'flex',
+          alignItems: 'center',
+          bgcolor: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '12px',
+          padding: '4px 8px',
+          boxShadow: 2,
         }}
       >
+        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+          #{rank}
+        </Typography>
+      </Box>
+
+      {/* Image Container */}
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '400px',
+          bgcolor: '#f5f5f5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {/* Loading Spinner */}
         {isLoading && (
           <Box
             sx={{
@@ -50,185 +160,142 @@ const Results = () => {
             <CircularProgress />
           </Box>
         )}
-        <Box
-          component="img"
-          src={`http://127.0.0.1:5001/preview/${encodeURIComponent(url)}`}
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setIsLoading(false);
-            setHasError(true);
-          }}
-          sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: hasError ? 'none' : 'block',
-          }}
-        />
-        {hasError && (
+
+        {/* Images */}
+        {images.map((imageUrl, index) => (
           <Box
+            key={imageUrl}
+            component="img"
+            src={imageUrl}
+            alt={`Listing image ${index + 1}`}
             sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
               width: '100%',
               height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: '#f5f5f5',
+              objectFit: 'cover',
+              opacity: currentImageIndex === index ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out',
             }}
-          >
-            <HomeIcon sx={{ fontSize: 48, color: '#bbb' }} />
-          </Box>
+          />
+        ))}
+
+        {/* Fallback Icon */}
+        {!isLoading && (hasError || images.length === 0) && (
+          <HomeIcon sx={{ fontSize: 48, color: '#bbb' }} />
         )}
-      </Box>
-    );
-  };
 
-  return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f7f7f7' }}>
-      {/* Header */}
-      <AppBar position="fixed" sx={{ bgcolor: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.08)' }}>
-        <Toolbar>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/')}
-            sx={{
-              color: '#FF5A5F',
-              '&:hover': {
-                bgcolor: 'rgba(255,90,95,0.1)'
-              }
-            }}
-          >
-            Back to Search
-          </Button>
-          <Box sx={{ flexGrow: 1 }} />
-          <HomeIcon sx={{ color: '#FF5A5F', fontSize: 28 }} />
-        </Toolbar>
-      </AppBar>
-
-      {/* Main Content */}
-      <Container maxWidth="xl" sx={{ pt: 10, pb: 4 }}>
-        {/* Results Header */}
-        <Box sx={{ mb: 4, mt: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600, color: '#222' }}>
-            {urls.length} stays found
-          </Typography>
-          <Typography variant="body1" sx={{ color: '#717171', mt: 1 }}>
-            Explore unique places to stay
-          </Typography>
-        </Box>
-
-        {/* Results Grid */}
-        <Box sx={{ 
-          display: 'grid',
-          gridTemplateColumns: '1fr', // Default for mobile
-          gap: 3,
-          '@media (min-width: 600px)': {
-            gridTemplateColumns: 'repeat(2, 1fr)', // 2 columns on tablet
-          },
-          '@media (min-width: 960px)': {
-            gridTemplateColumns: 'repeat(3, 1fr)', // 3 columns on desktop
-          },
-          maxWidth: '100%',
-          margin: '0 auto'
-        }}>
-          {urls.map((url, index) => (
-            <Tooltip
-              key={index}
-              title={<PreviewTooltip url={url} />}
-              placement="right"
-              arrow
-              followCursor
-              PopperProps={{
-                sx: {
-                  '& .MuiTooltip-tooltip': {
-                    bgcolor: 'transparent',
-                    p: 0
-                  },
-                  '& .MuiTooltip-arrow': {
-                    color: 'background.paper'
-                  }
-                }
+        {/* Navigation Arrows */}
+        {images.length > 1 && (
+          <>
+            <IconButton
+              onClick={handlePrevImage}
+              sx={{
+                position: 'absolute',
+                left: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 1)',
+                },
+                zIndex: 2,
               }}
             >
-              <Box
-                component="a"
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  display: 'block',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                  }
-                }}
-              >
-                {/* Placeholder Image */}
-                <Box sx={{
-                  bgcolor: '#f0f0f0',
-                  paddingTop: '66.67%', // 3:2 aspect ratio
-                  position: 'relative',
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: '#e1e1e1',
-                  }}>
-                    <HomeIcon sx={{ fontSize: 48, color: '#bbb' }} />
-                  </Box>
-                </Box>
+              <ChevronLeftIcon />
+            </IconButton>
+            <IconButton
+              onClick={handleNextImage}
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                bgcolor: 'rgba(255, 255, 255, 0.9)',
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 1)',
+                },
+                zIndex: 2,
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
 
-                {/* URL Text Container */}
+            {/* Image Indicators */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: 1,
+                zIndex: 2,
+              }}
+            >
+              {images.map((_, index) => (
                 <Box
+                  key={index}
                   sx={{
-                    mt: 2,
-                    px: 2.5, // Increased horizontal padding
-                    pb: 2.5,  // Added bottom padding
-                    pt: 1.5,  // Added top padding
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'break-word'
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: currentImageIndex === index ? 'white' : 'rgba(255, 255, 255, 0.5)',
+                    transition: 'background-color 0.3s ease-in-out',
                   }}
-                >
-                  <Link
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      color: 'text.primary',
-                      textDecoration: 'none',
-                      '&:hover': {
-                        textDecoration: 'underline',
-                      },
-                      fontSize: '0.95rem',
-                      lineHeight: 1.4,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {url}
-                  </Link>
-                </Box>
-              </Box>
-            </Tooltip>
-          ))}
-        </Box>
-      </Container>
+                />
+              ))}
+            </Box>
+          </>
+        )}
+      </Box>
+
+      {/* Content Area */}
+      <Box
+        sx={{
+          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}
+      >
+        {/* Summary */}
+        <Typography
+          variant="body1"
+          sx={{
+            color: 'text.secondary',
+            lineHeight: 1.6,
+          }}
+        >
+          {summary}
+        </Typography>
+
+        {/* View on Airbnb Link */}
+        <Link
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            color: '#FF5A5F',
+            textDecoration: 'none',
+            fontWeight: 'bold',
+            '&:hover': {
+              textDecoration: 'underline',
+            },
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 'bold',
+              color: '#FF5A5F',
+            }}
+          >
+            View on Airbnb
+          </Typography>
+        </Link>
+      </Box>
     </Box>
   );
 };
