@@ -6,6 +6,7 @@ set -e  # Exit immediately if a command exits with a non-zero status
 VENV_DIR="venv"
 echo "Activating virtual environment..."
 source $VENV_DIR/bin/activate
+playwright install
 
 # Run the Flask application
 echo "Running Flask application..."
