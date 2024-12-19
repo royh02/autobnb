@@ -43,8 +43,4 @@ cp -r build/* ../static/build
 
 cd ..
 
-# Step 6: Run the Flask application
-echo "Running Flask application..."
-python main.py
-
-echo "Deployment complete!"
+echo "Build complete!"
