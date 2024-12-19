@@ -2,17 +2,13 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Container, Box, Typography } from "@mui/material";
 import Form from "./components/Form";
-<<<<<<< HEAD
 import Key from "./components/Key";
 import Results from './components/Results';
-=======
-import Results from "./components/Results";
 import bgImage from './assets/bg.avif';
 
 const AppContent = () => {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
->>>>>>> e0d0103394270035b6f66e696e4d61ba70b6a942
 
   return (
     <Box sx={{
