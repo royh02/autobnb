@@ -36,6 +36,7 @@ async def get_dynamic_html(url):
             return html_content
 
     except Exception as e:
+        print(f"Error fetching page: {repr(e)}")
         return f"Error fetching page: {e}"
 
 
@@ -64,8 +65,10 @@ async def extract_airbnb_listing_links(url):
         ][:MAX_LISTING_COUNT]
         return "\n\n".join(formatted_list)
     except requests.exceptions.RequestException as e:
+        print(f"Error fetching page: {repr(e)}")
         return f"Error fetching page: {e}"
     except Exception as e:
+        print(f"Error processing HTML: {repr(e)}")
         return f"Error processing HTML: {e}"
 
 @default_subscription
