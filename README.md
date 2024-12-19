@@ -10,6 +10,8 @@ AutoBnb: Making searching for a place on Airbnb a breeze
    bash deploy.sh
    ```
 
+The webapp will be hosted at http://localhost:5001/
+
 # Instructions
 
 Submit the form based on user preferences, and watch Autobnb generate your ideal Airbnb!
