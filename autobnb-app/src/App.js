@@ -4,7 +4,7 @@ import { Container, Box, Typography } from "@mui/material";
 import Form from "./components/Form";
 import Key from "./components/Key";
 import Results from './components/Results';
-import bgImage from './assets/bg.avif';
+// import bgImage from './assets/bg.avif';
 
 const AppContent = () => {
   const location = useLocation();
@@ -14,7 +14,7 @@ const AppContent = () => {
     <Box sx={{
       width: '100%',
       minHeight: '100vh',
-      backgroundImage: `url(${bgImage})`,
+      // backgroundImage: `url(${bgImage})`,
       backgroundPosition: 'center',
       backgroundRepeat: 'repeat'
     }}>
@@ -44,10 +44,7 @@ const AppContent = () => {
           }}
         >
           AutoBnb: Airbnb Query Search
-        </Typography>
-
-        <Key />
-        
+        </Typography>        
         <Box sx={{ width: '100%' }}>
           <Routes>
             <Route path="/" element={<Form />} />

@@ -190,11 +190,18 @@ def search():
     query = json.loads(data.get('query'))
     
     user_prefs = query['user_pref']
+    if user_prefs['key']:
+        os.environ["OPENAI_API_KEY"] = user_prefs['key']
+    del user_prefs['key']
+    
     result_id = str(uuid.uuid4())
     asyncio.run(main(user_prefs, result_id, './logs', False, True))
-
-    with open('sorted_listings.json', 'r') as f:
-        sorted_listings = json.load(f)
+    
+    db = get_db()
+    cur = db.execute("SELECT id, data FROM my_table WHERE id = ?", (result_id,))
+    row = cur.fetchone()
+    sorted_listings = json.loads(row[1])
+    print(json.dumps(sorted_listings, indent=2))
 
     return jsonify({'sorted_listings': sorted_listings})
 
@@ -276,8 +283,9 @@ async def main(user_prefs, result_id, logs_dir: str, hil_mode: bool, save_screen
     Start with the Parsing Agent to parse the user's preferences. Then call the Listing Fetch Agent to get the listings' URLs. Then use the Browsing Agent to visit all the URLs outputted by the Listing Fetch Agent to provide summaries of each of the listings. After the summaries are provided, use the Description Agent to score the descriptions of each listing and the Image Analysis Agent to score the images of each listing. Finally, use the Ranking Agent to rank the listings based on the scores provided by both the Description Agent and the Image Analysis Agent.
 
     The Listing Fetch Agent should only be called once. When calling the browser agent you do not need to tell it which links to visit. The request is not satisfied until the Ranking Agent has been called. The request is satisfied immediately after the Ranking Agent outputs its results no matter what they are.
-    
+
     User Preferences: {user_prefs}
+
     Final Result ID: {result_id}
     """.strip()
 

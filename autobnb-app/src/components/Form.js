@@ -99,7 +99,8 @@ const Form = () => {
     location: "",
     checkIn: "",
     checkOut: "",
-    additionalInfo: ""
+    additionalInfo: "",
+    key: ""
   });
 
   const [error, setError] = useState(null);
@@ -245,16 +246,39 @@ const Form = () => {
                 borderColor: 'rgba(0, 0, 0, 0.23)',
               },
             },
+            "& .MuiOutlinedInput-root": {
+              "&.Mui-focused fieldset": {
+                borderColor: "#FF5A5F",
+              },
+            },
+            "& .MuiInputLabel-root.Mui-focused": {
+              color: "#FF5A5F",
+            },
           }}
         />
-        <div sx={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row',  justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+          <TextField
+            name="key"
+            label="OpenAI API Key"
+            value={formValues.key}
+            onChange={handleChange}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "#FF5A5F",
+                },
+              },
+              "& .MuiInputLabel-root.Mui-focused": {
+                color: "#FF5A5F",
+              },
+            }}
+          />
           <Button
             type="submit"
             variant="contained"
             disabled={isLoading}
             sx={{
               padding: "12px 24px",
-              margin: "12px 12px",
               fontSize: "1rem",
               fontWeight: "bold",
               fontFamily: '"Circular", sans-serif',
@@ -322,7 +346,6 @@ const Form = () => {
             disabled={isGenerating}
             sx={{
               padding: "12px 24px",
-              margin: "12px 12px",
               fontSize: "1rem",
               fontWeight: "bold",
               fontFamily: '"Circular", sans-serif',
@@ -382,7 +405,7 @@ const Form = () => {
               "I'm Feeling Lucky!"
             )}
           </Button>
-        </div>
+        </Box>
       </PageContainer>
     </form>
   );

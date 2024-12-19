@@ -65,17 +65,22 @@ class ImageAnalysisAgent(BaseWorker):
             context = " ".join([str(msg.content) for msg in self._chat_history])
             criteria, browsing_agent_result = await self._parse_context(context)
             
-            listing_urls  = [entry['url'] for entry in browsing_agent_result]
+            listing_urls = [entry['url'] for entry in browsing_agent_result]
             image_urls = [entry['image_urls'] for entry in browsing_agent_result]
             image_outputs = await self._score_images(criteria, image_urls)
-            
-            response = f"Here are the image scores:\n\n"
-            for i, image_output in enumerate(image_outputs):
-                response += f"URL: {listing_urls[i]}\n"
-                response += f"Score: {image_output.score}\n"
-                response += f"Reasoning: {image_output.reasoning}\n"
-                response += f"\n"
+            image_agent_result = {
+                listing_urls[i]: {
+                    'score': image_output.score,
+                    'reasoning': image_output.reasoning,
+                } for i, image_output in enumerate(image_outputs)
+            }
 
+            result_id = str(uuid.uuid4())
+            db = get_db()
+            db.execute("INSERT INTO my_table (id, data) VALUES (?, ?)", (result_id, json.dumps(image_agent_result)))
+            db.commit()
+            
+            response = f"Image Analysis Agent Result ID: {result_id}"
             return False, response
         
         except Exception as e:
@@ -84,7 +89,7 @@ class ImageAnalysisAgent(BaseWorker):
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a dictionary with three fields:  
+        Your task is to parse the chat history and extract a dictionary with two fields:  
 
         1. **criteria**: A string containing the user's preferences.
         2. **browsing_agent_result_id**: A string containing a uuid. This should be labeled as Browsing Agent Result ID in the chat history.

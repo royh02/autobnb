@@ -76,17 +76,22 @@ class DescriptionAgent(BaseWorker):
             context = " ".join([str(msg.content) for msg in self._chat_history])
             criteria, browsing_agent_result = await self._parse_context(context)
             
-            listing_urls  = [entry['url'] for entry in browsing_agent_result]
+            listing_urls = [entry['url'] for entry in browsing_agent_result]
             descriptions = [entry['summary'] for entry in browsing_agent_result]
             description_outputs = await self._score_listings(criteria, descriptions)
+            description_agent_result = {
+                listing_urls[i]: {
+                    'score': description_output.score,
+                    'reasoning': description_output.reasoning,
+                } for i, description_output in enumerate(description_outputs.outputs)
+            }
 
-            response = f"Here are the description scores:\n\n"
-            for i, description_output in enumerate(description_outputs.outputs):
-                response += f"URL: {listing_urls[i]}\n"
-                response += f"Score: {description_output.score}\n"
-                response += f"Reasoning: {description_output.reasoning}\n"
-                response += f"\n"
-
+            result_id = str(uuid.uuid4())
+            db = get_db()
+            db.execute("INSERT INTO my_table (id, data) VALUES (?, ?)", (result_id, json.dumps(description_agent_result)))
+            db.commit()
+            
+            response = f"Description Agent Result ID: {result_id}"
             return False, response
 
         except Exception as e:
@@ -95,7 +100,7 @@ class DescriptionAgent(BaseWorker):
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a dictionary with three fields:  
+        Your task is to parse the chat history and extract a dictionary with two fields:  
 
         1. **criteria**: A string containing the user's preferences.
         2. **browsing_agent_result_id**: A string containing a uuid. This should be labeled as Browsing Agent Result ID in the chat history.
