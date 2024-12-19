@@ -12,4 +12,4 @@ AutoBnb: Making searching for a place on Airbnb a breeze
 
 # Instructions
 
-1. Submit the form based on user preferences, and watch Autobnb generate your ideal Airbnb!
+Submit the form based on user preferences, and watch Autobnb generate your ideal Airbnb!
