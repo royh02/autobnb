@@ -10,7 +10,7 @@ AutoBnb: Making searching for a place on Airbnb a breeze
    bash deploy.sh
    ```
 
-The webapp will be hosted at http://localhost:5001/
+The webapp will be found at http://localhost:5001/
 
 # Instructions
 
