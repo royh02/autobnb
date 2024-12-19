@@ -23,7 +23,19 @@ async def get_dynamic_html(url):
     try:
         async with async_playwright() as p:
             # Launch the browser
-            browser = await p.chromium.launch(headless=True)  # Set headless=False to visualize the browser
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-accelerated-2d-canvas",
+                    "--no-zygote",
+                    "--single-process",  # Required for some Docker environments
+                    "--disable-web-security",
+                ],
+            )
             page = await browser.new_page()
             # Go to the page
             await page.goto(url)

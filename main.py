@@ -68,7 +68,19 @@ def init_db():
 def get_preview(url):
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-accelerated-2d-canvas",
+                    "--no-zygote",
+                    "--single-process",  # Required for some Docker environments
+                    "--disable-web-security",
+                ],
+            )
             context = browser.new_context()
             page = context.new_page()
 
