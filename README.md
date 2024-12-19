@@ -4,7 +4,7 @@ AutoBnb: Making searching for a place on Airbnb a breeze
 
 # Host Locally
 
-**Simply run deploy.sh to install all dependencies and host locally!**:
+**Simply run the `deploy.sh` script to install all dependencies and host locally!**:
 
    ```bash
    bash deploy.sh
