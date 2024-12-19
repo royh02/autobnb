@@ -14,6 +14,7 @@ source $VENV_DIR/bin/activate
 # Step 2: Install backend dependencies
 echo "Installing backend dependencies from requirements.txt..."
 pip install -r requirements.txt
+playwright install chromium
 
 # Step 3: Clone and install additional backend dependencies
 rm -rf autogen
