@@ -35,10 +35,8 @@ class ImageOutput(BaseModel):
 
 @default_subscription
 class ImageAnalysisAgent(BaseWorker):
-    """An agent that scores listings based on its images."""
-    
-    DEFAULT_DESCRIPTION = "A scoring assistant that scores Airbnb listings based on images scraped from the site."
-    
+    DEFAULT_DESCRIPTION = "An agent that scores Airbnb listings based on their images."
+
     def __init__(
         self,
         description: str = DEFAULT_DESCRIPTION,

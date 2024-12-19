@@ -14,8 +14,10 @@ source $VENV_DIR/bin/activate
 # Step 2: Install backend dependencies
 echo "Installing backend dependencies from requirements.txt..."
 pip install -r requirements.txt
+playwright install --with-deps
 
 # Step 3: Clone and install additional backend dependencies
+rm -rf autogen
 REPO_URL="https://github.com/microsoft/autogen.git"
 echo "Cloning repository from $REPO_URL..."
 git clone $REPO_URL
@@ -42,8 +44,9 @@ cp -r build/* ../static/build
 
 cd ..
 
-# Step 6: Run the Flask application
+echo "Build complete!"
+
+# Run the Flask application
 echo "Running Flask application..."
 python main.py
-
 echo "Deployment complete!"

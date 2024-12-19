@@ -34,7 +34,6 @@ class BrowsingInput(BaseModel):
 
 @default_subscription
 class BrowsingAgent(BaseWorker):
-    """An agent that visits URLs provided by the Listing Fetch Agent and generates a summary of each listing."""
     DEFAULT_DESCRIPTION = "An agent that visits URLs provided by the Listing Fetch Agent and generates a summary of each listing."
     
     def __init__(
@@ -93,7 +92,19 @@ class BrowsingAgent(BaseWorker):
     async def _scrape_listings(self, listing_urls: list[str]) -> list[dict]:
         async def get_listing_content(url: str) -> dict:
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                browser = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--disable-accelerated-2d-canvas",
+                        "--no-zygote",
+                        "--single-process",  # Required for some Docker environments
+                        "--disable-web-security",
+                    ],
+                )
                 page = await browser.new_page()
                 await page.goto(url)
                 await page.wait_for_load_state('networkidle')

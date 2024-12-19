@@ -39,10 +39,7 @@ class DescriptionOutputs(BaseModel):
 
 @default_subscription
 class DescriptionAgent(BaseWorker):
-    """An agent that validates Airbnb listings against user criteria and returns scores as a list of integers 1-5."""
-
-    DEFAULT_DESCRIPTION = """You are a validation assistant that scores Airbnb listings based on user criteria.
-    You will only output a JSON array of integers corresponding to each listing's score (1-5) with no additional text."""
+    DEFAULT_DESCRIPTION = "An agent that scores Airbnb listings based on their descriptions."
 
     def __init__(
         self,

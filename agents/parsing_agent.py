@@ -32,15 +32,14 @@ class ParsingOutput(BaseModel):
     guestsChildren: Optional[int]
     guestsInfants: Optional[int]
     guestsPets: Optional[int]
-    priceMin: Optional[str]
-    priceMax: Optional[str]
+    priceMin: Optional[int]
+    priceMax: Optional[int]
     bedrooms: Optional[int]
     bathrooms: Optional[int]
     amenities: Optional[list[str]]
 
 @default_subscription
 class ParsingAgent(BaseWorker):
-    """An agent that parses the user's preferences into a formatted dictionary to construct the URL for the start page for the search."""
     DEFAULT_DESCRIPTION = "An agent that parses the user's preferences into a formatted dictionary to construct the URL for the start page for the search."
     
     def __init__(

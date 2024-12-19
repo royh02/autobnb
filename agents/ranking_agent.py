@@ -34,9 +34,7 @@ class RankingInput(BaseModel):
 
 @default_subscription
 class RankingAgent(BaseWorker):
-    """An agent that ranks listings based on the outputs of many scoring agents."""
-    
-    DEFAULT_DESCRIPTION = "A ranking assistant that ranks Airbnb listings based on the scores output by the Description Agent and Image Analysis Agent."
+    DEFAULT_DESCRIPTION = "A agent that ranks Airbnb listings based on the scores output by the Description Agent and Image Analysis Agent."
     
     def __init__(
         self,

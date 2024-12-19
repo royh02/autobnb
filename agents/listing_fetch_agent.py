@@ -23,7 +23,19 @@ async def get_dynamic_html(url):
     try:
         async with async_playwright() as p:
             # Launch the browser
-            browser = await p.chromium.launch(headless=True)  # Set headless=False to visualize the browser
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-accelerated-2d-canvas",
+                    "--no-zygote",
+                    "--single-process",  # Required for some Docker environments
+                    "--disable-web-security",
+                ],
+            )
             page = await browser.new_page()
             # Go to the page
             await page.goto(url)
@@ -36,6 +48,7 @@ async def get_dynamic_html(url):
             return html_content
 
     except Exception as e:
+        print(f"Error fetching page: {repr(e)}")
         return f"Error fetching page: {e}"
 
 
@@ -64,16 +77,15 @@ async def extract_airbnb_listing_links(url):
         ][:MAX_LISTING_COUNT]
         return "\n\n".join(formatted_list)
     except requests.exceptions.RequestException as e:
+        print(f"Error fetching page: {repr(e)}")
         return f"Error fetching page: {e}"
     except Exception as e:
+        print(f"Error processing HTML: {repr(e)}")
         return f"Error processing HTML: {e}"
 
 @default_subscription
 class ListingFetchAgent(BaseWorker):
-    """An agent that processes user input and fetches Airbnb listings."""
-
-    DEFAULT_DESCRIPTION = """You are an intelligent agent designed to fetch listings on the current page.
-    Display results with a hyperlink to each relevant Airbnb listing."""
+    DEFAULT_DESCRIPTION = """An agent that finds Airbnb listing links for the Browser Agent from the base URL from the Init Agent."""
 
     def __init__(
         self,
