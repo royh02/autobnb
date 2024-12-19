@@ -1,6 +1,6 @@
 import asyncio
 from typing import Tuple
-from config import MODEL_NAME, TEMPERATURE, MAX_WORKERS
+from config import MODEL_NAME, TEMPERATURE, MAX_WORKERS, DATABASE
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -18,6 +18,16 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import uuid
+import json
+import sqlite3
+from flask import g
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
 
 class BrowsingInput(BaseModel):
     listing_urls: list[str]
@@ -47,15 +57,12 @@ class BrowsingAgent(BaseWorker):
             listing_urls = await self._parse_context(context)
             scraped_listings = await self._scrape_listings(listing_urls)
             
-            # Nicely format the response
-            response = "Here are the scraped listings:\n\n"
-            for scraped_listing in scraped_listings:
-                response += f"**URL:** {scraped_listing['url']}\n"
-                response += f"**Description:** {scraped_listing['summary']}\n"
-                response += f"**Image URLs:**\n"
-                for image_url in scraped_listing['image_urls']:
-                    response += f"    {image_url}\n"
-                response += "\n"
+            result_id = str(uuid.uuid4())
+            db = get_db()
+            db.execute("INSERT INTO my_table (id, data) VALUES (?, ?)", (result_id, json.dumps(scraped_listings)))
+            db.commit()
+            
+            response = f"Browsing Agent Result ID: {result_id}"
             return False, response
 
         except Exception as e:

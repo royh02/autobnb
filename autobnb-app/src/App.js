@@ -2,6 +2,7 @@ import React from "react";
 import { Container, Typography, Box } from "@mui/material";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Form from "./components/Form";
+import Key from "./components/Key";
 import Results from './components/Results';
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
         >
           AutoBnb: Airbnb Query Search
         </Typography>
+
+        <Key />
         
         <Routes>
           <Route path="/" element={<Form />} />

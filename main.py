@@ -35,6 +35,7 @@ import requests
 from bs4 import BeautifulSoup
 import sqlite3
 from flask import g
+import uuid
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -140,12 +141,13 @@ def get_preview(url):
 def search():
     data = request.json
     query = json.loads(data.get('query'))
+    
     user_prefs = query['user_pref']
+    result_id = str(uuid.uuid4())
+    asyncio.run(main(user_prefs, result_id, './logs', False, True))
 
-    asyncio.run(main(user_prefs, './logs', False, True))
-
-    with open('sorted_listings.txt', 'r') as file:
-        sorted_listings = file.read().splitlines()
+    with open('sorted_listings.json', 'r') as f:
+        sorted_listings = json.load(f)
 
     return jsonify({'sorted_listings': sorted_listings})
 
@@ -180,7 +182,7 @@ def create_websurfer_subscription() -> Subscription:
     return Subscription(topic_id="web_surfer_topic")
 
 
-async def main(user_prefs, logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
+async def main(user_prefs, result_id, logs_dir: str, hil_mode: bool, save_screenshots: bool) -> None:
     # Create the runtime.
     runtime = SingleThreadedAgentRuntime()
 
@@ -229,6 +231,7 @@ async def main(user_prefs, logs_dir: str, hil_mode: bool, save_screenshots: bool
     The Listing Fetch Agent should only be called once. When calling the browser agent you do not need to tell it which links to visit. The request is not satisfied until the Ranking Agent has been called. The request is satisfied immediately after the Ranking Agent outputs its results no matter what they are.
     
     User Preferences: {user_prefs}
+    Final Result ID: {result_id}
     """.strip()
 
     await runtime.send_message(

@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Tuple, Dict, List
-from config import MODEL_NAME, TEMPERATURE
+from config import MODEL_NAME, TEMPERATURE, DATABASE
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -15,11 +15,20 @@ from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 from pydantic import BaseModel
 from openai import AsyncOpenAI
+import uuid
+import json
+import sqlite3
+from flask import g
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
 
 class DescriptionInput(BaseModel):
     criteria: str
-    listing_urls: list[str]
-    descriptions: list[str]
+    browsing_agent_result_id: str
 
 class DescriptionOutput(BaseModel):
     score: int
@@ -65,7 +74,10 @@ class DescriptionAgent(BaseWorker):
 
         try:
             context = " ".join([str(msg.content) for msg in self._chat_history])
-            criteria, listing_urls, descriptions = await self._parse_context(context)
+            criteria, browsing_agent_result = await self._parse_context(context)
+            
+            listing_urls  = [entry['url'] for entry in browsing_agent_result]
+            descriptions = [entry['summary'] for entry in browsing_agent_result]
             description_outputs = await self._score_listings(criteria, descriptions)
 
             response = f"Here are the description scores:\n\n"
@@ -86,10 +98,7 @@ class DescriptionAgent(BaseWorker):
         Your task is to parse the chat history and extract a dictionary with three fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **listing_urls**: A list of Airbnb URLs.
-        3. **descriptions**: A list of Airbnb listing descriptions output by the browser agent.
-
-        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the listing_urls and descriptions are aligned such that an index in listing_urls corresponds to an index in descriptions.
+        2. **browsing_agent_result_id**: A string containing a uuid. This should be labeled as Browsing Agent Result ID in the chat history.
 
         Chat history:
         {context}
@@ -103,9 +112,14 @@ class DescriptionAgent(BaseWorker):
         )
         decription_input = response.choices[0].message.parsed
         criteria = decription_input.criteria
-        listing_urls = decription_input.listing_urls
-        descriptions = decription_input.descriptions
-        return criteria, listing_urls, descriptions
+        browsing_agent_result_id = decription_input.browsing_agent_result_id
+        
+        db = get_db()
+        cur = db.execute("SELECT id, data FROM my_table WHERE id = ?", (browsing_agent_result_id,))
+        row = cur.fetchone()
+        browsing_agent_result = json.loads(row[1])
+        
+        return criteria, browsing_agent_result
 
     async def _score_listings(
         self, 

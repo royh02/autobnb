@@ -1,6 +1,6 @@
 import asyncio
 from typing import Tuple
-from config import MODEL_NAME, TEMPERATURE
+from config import MODEL_NAME, TEMPERATURE, DATABASE
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -14,11 +14,20 @@ from autogen_magentic_one.utils import message_content_to_str
 from autogen_magentic_one.agents.base_worker import BaseWorker
 from pydantic import BaseModel
 from openai import AsyncOpenAI
+import uuid
+import json
+import sqlite3
+from flask import g
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
 
 class ImageInput(BaseModel):
     criteria: str
-    listing_urls: list[str]
-    image_urls: list[list[str]]
+    browsing_agent_result_id: str
 
 class ImageOutput(BaseModel):
     score: int
@@ -54,7 +63,10 @@ class ImageAnalysisAgent(BaseWorker):
         try:
             # Prepare context from chat history
             context = " ".join([str(msg.content) for msg in self._chat_history])
-            criteria, listing_urls, image_urls = await self._parse_context(context)
+            criteria, browsing_agent_result = await self._parse_context(context)
+            
+            listing_urls  = [entry['url'] for entry in browsing_agent_result]
+            image_urls = [entry['image_urls'] for entry in browsing_agent_result]
             image_outputs = await self._score_images(criteria, image_urls)
             
             response = f"Here are the image scores:\n\n"
@@ -75,10 +87,7 @@ class ImageAnalysisAgent(BaseWorker):
         Your task is to parse the chat history and extract a dictionary with three fields:  
 
         1. **criteria**: A string containing the user's preferences.
-        2. **listing_urls**: A list of Airbnb URLs.
-        3. **image_urls**: A list of lists of image urls returned by the browser agent. Each listing can have multiple images.
-
-        If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the listing_urls and image_urls are aligned such that an index in listing_urls corresponds to an index in image_urls.
+        2. **browsing_agent_result_id**: A string containing a uuid. This should be labeled as Browsing Agent Result ID in the chat history.
 
         Chat history:
         {context}
@@ -92,9 +101,15 @@ class ImageAnalysisAgent(BaseWorker):
         )
         image_input = response.choices[0].message.parsed
         criteria = image_input.criteria
-        listing_urls = image_input.listing_urls
-        image_urls = image_input.image_urls
-        return criteria, listing_urls, image_urls
+
+        browsing_agent_result_id = image_input.browsing_agent_result_id
+        
+        db = get_db()
+        cur = db.execute("SELECT id, data FROM my_table WHERE id = ?", (browsing_agent_result_id,))
+        row = cur.fetchone()
+        browsing_agent_result = json.loads(row[1])
+        
+        return criteria, browsing_agent_result
     
     async def _score_images(self, criteria: str, image_urls: list[list[str]]) -> list[int]:
         """
