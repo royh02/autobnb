@@ -199,7 +199,7 @@ const Form = () => {
       // const data = {"sorted_listings": ["https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco", "https://airbnb.com/s/San-Diego", "https://airbnb.com/s/San-Francisco"]}
       if (Array.isArray(data.sorted_listings)) {
         // Navigate to results page with the URLs
-        navigate('/results', { state: { data } });
+        navigate('/results', { state: { data: data.sorted_listings } });
       } else {
         setError("Invalid response format from server");
       }

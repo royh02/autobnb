@@ -1,6 +1,6 @@
 import asyncio
 from typing import Tuple
-from config import MODEL_NAME, DESCRIPTION_WEIGHT, IMAGE_WEIGHT, TEMPERATURE, DATABASE
+from config import MODEL_NAME, DESCRIPTION_WEIGHT, IMAGE_WEIGHT, TEMPERATURE, DATABASE, SHOWN_LISTING_COUNT
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -89,7 +89,8 @@ class RankingAgent(BaseWorker):
             sorted_desc_reasonings = [description_reasonings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
             sorted_img_reasonings = [image_reasonings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
             ranking_output = await self._summarize_reasonings(criteria, sorted_listings, sorted_desc_reasonings, sorted_img_reasonings)
-            
+            ranking_output = ranking_output[:SHOWN_LISTING_COUNT]
+
             db = get_db()
             db.execute("INSERT INTO my_table (id, data) VALUES (?, ?)", (final_result_id, json.dumps(ranking_output)))
             db.commit()
