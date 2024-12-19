@@ -3,6 +3,8 @@ OAI_CONFIG_LIST.json
 
 node_modules
 autobnb-app/node_modules
+autobnb-app/build/
+static
 
 __pycache__
 venv

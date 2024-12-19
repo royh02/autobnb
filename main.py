@@ -24,7 +24,7 @@ from agents.description_agent import DescriptionAgent
 from agents.parsing_agent import ParsingAgent
 from config import MODEL_NAME, MAX_LISTING_COUNT, FLASK_PORT, DATABASE
 
-from flask import Flask, request, jsonify, send_file, Response
+from flask import Flask, request, jsonify, send_file, Response, send_from_directory
 from flask_cors import CORS
 import asyncio
 import os
@@ -43,8 +43,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static/build", static_url_path="")
 cors = CORS(app)
+
+@app.route("/")
+def serve():
+    return send_from_directory(app.static_folder, "index.html")
+
+@app.route("/<path:path>")
+def serve_static(path):
+    if path and (app.static_folder / path).exists():
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, "index.html")
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -334,4 +345,4 @@ if __name__ == "__main__":
     init_db()
     port = FLASK_PORT  # Specify the port you want to use
     print(f"Flask server running on http://localhost:{port}")
-    app.run(debug=True, port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)

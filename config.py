@@ -3,10 +3,10 @@ MODEL_NAME = "gpt-4o-mini"
 TEMPERATURE = 0.9
 
 # Worker settings
-MAX_WORKERS = 6
+MAX_WORKERS = 5
 
 # Max listings to search for
-MAX_LISTING_COUNT = 50
+MAX_LISTING_COUNT = 10
 SHOWN_LISTING_COUNT = 6
 
 # Flask port
