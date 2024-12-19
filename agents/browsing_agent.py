@@ -50,9 +50,9 @@ class BrowsingAgent(BaseWorker):
             # Nicely format the response
             response = "Here are the scraped listings:\n\n"
             for scraped_listing in scraped_listings:
-                response += f"URL: {scraped_listing['url']}\n"
-                response += f"Summary: {scraped_listing['summary']}\n"
-                response += f"Image URLs:\n"
+                response += f"**URL:** {scraped_listing['url']}\n"
+                response += f"**Description:** {scraped_listing['summary']}\n"
+                response += f"**Image URLs:**\n"
                 for image_url in scraped_listing['image_urls']:
                     response += f"    {image_url}\n"
                 response += "\n"

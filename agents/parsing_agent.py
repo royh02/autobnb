@@ -18,6 +18,7 @@ from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 class ParsingInput(BaseModel):
     criteria: str
@@ -26,16 +27,16 @@ class ParsingOutput(BaseModel):
     location: str
     checkIn: str
     checkOut: str
-    guestsAdults: int
-    guestsChildren: int
-    guestsInfants: int
-    guestsPets: int
-    priceMin: str
-    priceMax: str
-    bedrooms: int
-    bathrooms: int
     additionalInfo: str
-    amenities: list[str]
+    guestsAdults: Optional[int]
+    guestsChildren: Optional[int]
+    guestsInfants: Optional[int]
+    guestsPets: Optional[int]
+    priceMin: Optional[str]
+    priceMax: Optional[str]
+    bedrooms: Optional[int]
+    bathrooms: Optional[int]
+    amenities: Optional[list[str]]
 
 @default_subscription
 class ParsingAgent(BaseWorker):
@@ -70,13 +71,13 @@ class ParsingAgent(BaseWorker):
             return False, response
 
         except Exception as e:
-            return False, f"Error: {str(repr(e))}"
+            return False, f"Error: {repr(e)}"
 
     async def _parse_context(self, context: str) -> str:
         prompt = f"""
         Your task is to parse the chat history and extract a dictionary with one field:
         
-        1. **criteria**: A string containing the user's preferences for the Airbnb they are looking for. This should be directly read from the output by the Init Agent. Be sure to include the location and check in and checkout dates if mentioned.
+        1. **criteria**: A string containing the user's preferences for the Airbnb they are looking for. This should be directly read from the output by the Init Agent. Be sure to include the location and check in and checkout dates if mentioned. Try to minimally modify the user's wording.
 
         Chat history:
         {context}

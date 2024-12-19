@@ -1,6 +1,6 @@
 import asyncio
 from typing import Tuple
-from config import MODEL_NAME, DESCRIPTION_WEIGHT, IMAGE_WEIGHT
+from config import MODEL_NAME, DESCRIPTION_WEIGHT, IMAGE_WEIGHT, TEMPERATURE
 from autogen_core.base import CancellationToken
 from autogen_core.components import default_subscription
 # from autogen_core import MessageContext, TopicId
@@ -15,6 +15,7 @@ from autogen_magentic_one.agents.base_worker import BaseWorker
 from itertools import zip_longest
 from pydantic import BaseModel
 from openai import AsyncOpenAI
+import json
 
 class RankingInput(BaseModel):
     listings: list[str]
@@ -22,6 +23,7 @@ class RankingInput(BaseModel):
     description_reasonings: list[str]
     image_scores: list[int]
     image_reasonings: list[str]
+    criteria: str
 
 @default_subscription
 class RankingAgent(BaseWorker):
@@ -58,36 +60,43 @@ class RankingAgent(BaseWorker):
                 description_scores,
                 description_reasonings,
                 image_scores,
-                image_reasonings
+                image_reasonings,
+                criteria,
             ) = await self._parse_context(context)
 
             # Rank listings
             ranked_listings_idxs = self._rank_listings(description_scores, image_scores)
             sorted_listings = [listings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
-            response = f"Here are the listings sorted by their scores: {sorted_listings}"
-
-            # TODO: Generate ranking summaries
+            sorted_desc_reasonings = [description_reasonings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
+            sorted_img_reasonings = [image_reasonings[idx] for idx in ranked_listings_idxs if idx < len(listings)]
+            ranking_output = await self._summarize_reasonings(criteria, sorted_listings, sorted_desc_reasonings, sorted_img_reasonings)
+            
             with open("sorted_listings.txt", "w") as file:
                 for listing in sorted_listings:
                     file.write(f"{listing}\n")
 
+            with open("sorted_listings.json", "w") as f:
+                json.dump(ranking_output, f)
+
+            response = f"Here are the listings sorted by their scores:\n{json.dumps(ranking_output, indent=2)}"
             return False, response
         
         except Exception as e:
-            return False, f"Error: {str(e)}"
+            return False, f"Error: {repr(e)}"
     
     async def _parse_context(self, context: str):
         # Prepare the system prompt
         prompt = f"""
-        Your task is to parse the chat history and extract a dictionary with five fields:  
+        Your task is to parse the chat history and extract a dictionary with six fields:  
 
         1. **listings**: A list of Airbnb URLs.
         2. **description_scores**: A list of integers for description scores.
         3. **description_reasonings**: A list of strings for description reasonings.
         4. **image_scores**: A list of integers for image scores.
         5. **image_reasonings**: A list of strings for image reasonings.
+        6. **criteria**: A string containing the user's preferences.
 
-        Ensure all three lists have the same number of entries. If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the lists are aligned such that an index in any list corresponds to the same index in any other list.
+        Ensure all five lists have the same number of entries. If any field is missing, return an empty list for it. Ensure the lists are complete and consistent with the chat history. Ensure that the lists are aligned such that an index in any list corresponds to the same index in any other list.
 
         Chat history:
         {context}
@@ -106,7 +115,8 @@ class RankingAgent(BaseWorker):
         description_reasonings = ranking_input.description_reasonings
         image_scores = ranking_input.image_scores
         image_reasonings = ranking_input.image_reasonings
-        return listings, description_scores, description_reasonings, image_scores, image_reasonings
+        criteria = ranking_input.criteria
+        return listings, description_scores, description_reasonings, image_scores, image_reasonings, criteria
     
     def _rank_listings(self, description_scores: list[int], image_scores: list[int]) -> list[int]:
         scores = [
@@ -115,6 +125,35 @@ class RankingAgent(BaseWorker):
         ]
         sorted_listing_idxs = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
         return sorted_listing_idxs
+
+    async def _summarize_reasonings(self, criteria: str, listings: list[str], desc_analyses: list[str], img_analyses: list[str]) -> list:
+        prompt_template = """
+        User's preferences in looking for an Airbnb: {criteria}
+        
+        Analysis of the description for a found Airbnb listing: {description}
+        
+        Analysis of the images for a found Airbnb listing: {image}
+        
+        Given the above information, generate a brief summary for why this Airbnb is a good match for the user.
+        """.strip()
+
+        ranking_outputs = []
+        for listing, desc_analysis, img_analysis in zip(listings, desc_analyses, img_analyses):
+            prompt = prompt_template.format(
+                criteria=criteria, 
+                description=desc_analysis, 
+                image=img_analysis
+            )
+            response = await self._openai_client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=TEMPERATURE
+            )
+            ranking_outputs.append({
+                'url': listing,
+                'summary': response.choices[0].message.content.strip()
+            })
+        return ranking_outputs
 
     async def ainput(self, prompt: str) -> str:
         """
