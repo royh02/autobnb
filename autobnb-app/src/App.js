@@ -1,21 +1,36 @@
 import React from "react";
-import { Container, Typography, Box } from "@mui/material";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { Container, Box, Typography } from "@mui/material";
 import Form from "./components/Form";
+<<<<<<< HEAD
 import Key from "./components/Key";
 import Results from './components/Results';
+=======
+import Results from "./components/Results";
+import bgImage from './assets/bg.avif';
 
-function App() {
+const AppContent = () => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+>>>>>>> e0d0103394270035b6f66e696e4d61ba70b6a942
+
   return (
-    <Router>
+    <Box sx={{
+      width: '100%',
+      minHeight: '100vh',
+      backgroundImage: `url(${bgImage})`,
+      backgroundPosition: 'center',
+      backgroundRepeat: 'repeat'
+    }}>
       <Container
         style={{
           width: "100vw",
-          height: "100vh",
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
           alignItems: "center",
+          justifyContent: isHomePage ? "center" : "flex-start",
+          paddingTop: isHomePage ? "0px" : "120px"
         }}
       >
         <Typography
@@ -25,6 +40,11 @@ function App() {
             textAlign: "center",
             color: "#FF5A5F",
             marginBottom: "20px",
+            paddingTop: isHomePage ? "0px" : "0px",
+            backgroundColor: "white",
+            padding: "20px 40px",
+            borderRadius: "15px",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)"
           }}
         >
           AutoBnb: Airbnb Query Search
@@ -32,11 +52,21 @@ function App() {
 
         <Key />
         
-        <Routes>
-          <Route path="/" element={<Form />} />
-          <Route path="/results" element={<Results />} />
-        </Routes>
+        <Box sx={{ width: '100%' }}>
+          <Routes>
+            <Route path="/" element={<Form />} />
+            <Route path="/results" element={<Results />} />
+          </Routes>
+        </Box>
       </Container>
+    </Box>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

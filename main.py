@@ -3,6 +3,7 @@ import logging
 import os
 import argparse
 import json
+import hashlib
 
 from autogen_core import SingleThreadedAgentRuntime
 from autogen_core.application.logging import EVENT_LOGGER_NAME
@@ -23,7 +24,7 @@ from agents.description_agent import DescriptionAgent
 from agents.parsing_agent import ParsingAgent
 from config import MODEL_NAME, MAX_LISTING_COUNT, FLASK_PORT, DATABASE
 
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 from flask_cors import CORS
 import asyncio
 import os
@@ -36,6 +37,11 @@ from bs4 import BeautifulSoup
 import sqlite3
 from flask import g
 import uuid
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -58,84 +64,125 @@ def init_db():
         with app.open_resource('schema.sql', mode='r') as f:
             db.executescript(f.read())
 
-# Create a cache directory for screenshots
-CACHE_DIR = os.path.join(tempfile.gettempdir(), 'airbnb_previews')
-os.makedirs(CACHE_DIR, exist_ok=True)
-
-def get_image_url(url):
-    try:
-        # Set up headers to mimic a browser
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        
-        # Fetch the page content
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Try to find the meta image tag
-        meta_image = soup.find('meta', {'itemprop': 'image'})
-        if meta_image and meta_image.get('content'):
-            return meta_image['content']
-            
-        # Fallback: try other meta tags
-        meta_og_image = soup.find('meta', {'property': 'og:image'})
-        if meta_og_image and meta_og_image.get('content'):
-            return meta_og_image['content']
-            
-        return None
-    except Exception as e:
-        print(f"Error getting image URL: {str(e)}")
-        return None
-
-def get_screenshot(url):
-    # Create a cache filename based on the URL
-    cache_file = os.path.join(CACHE_DIR, f"{hash(url)}.png")
-    
-    # Check if cached version exists and is less than 24 hours old
-    if os.path.exists(cache_file):
-        file_age = time.time() - os.path.getmtime(cache_file)
-        if file_age < 86400:  # 24 hours in seconds
-            return cache_file
-
-    # Get the image URL from the page
-    image_url = get_image_url(url)
-    if not image_url:
-        print(f"No image URL found for {url}")
-        return None
-
-    # Download and save the image
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(image_url, headers=headers)
-        if response.status_code == 200:
-            with open(cache_file, 'wb') as f:
-                f.write(response.content)
-            return cache_file
-    except Exception as e:
-        print(f"Error downloading image: {str(e)}")
-        return None
-
-    return None
-
 @app.route('/preview/<path:url>')
 def get_preview(url):
-    print('hihi', url)
     try:
-        decoded_url = unquote(url)
-        print('hihi1', decoded_url)
-        screenshot_path = get_screenshot(decoded_url)
+        # Fetch the Airbnb page with redirects enabled
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+        }
         
-        if screenshot_path and os.path.exists(screenshot_path):
-            return send_file(screenshot_path, mimetype='image/png')
-        else:
-            # Return a 404 if no screenshot could be taken
-            return '', 404
+        # First get the final URL after redirects
+        # initial_response = requests.get(url, headers=headers, allow_redirects=True)
+        # final_url = initial_response.url
+        # print(f"Initial URL: {url}")
+        # print(f"Final URL after redirect: {final_url}")
+        
+        # Use selenium to get the fully rendered page
+        chrome_options = Options()
+        chrome_options.add_argument('--headless=new')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--start-maximized')  # Maximize window
+        chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # Prevent detection
+        chrome_options.add_argument(f'user-agent={headers["User-Agent"]}')
+        
+        driver = webdriver.Chrome(options=chrome_options)
+        try:
+            # Set page load timeout and script timeout
+            driver.set_page_load_timeout(20)
+            driver.set_script_timeout(20)
+            
+            # Set implicit wait for all element finds
+            # driver.implicitly_wait(10)
+            
+            # Load the page
+            driver.get(url)
+            
+            # Create WebDriverWait object with longer timeout
+            wait = WebDriverWait(driver, 15)
+            
+            try:
+                # Wait for gallery container
+                # wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-section-id="HERO_DEFAULT"]')))
+                
+                # Wait for any picture element to be present
+                wait.until(EC.presence_of_element_located((By.TAG_NAME, 'picture')))
+                
+                # Wait for network requests to finish
+                # wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                
+                # Additional wait for images to load
+                # wait.until(lambda d: d.execute_script('''
+                #     const images = document.getElementsByTagName('img');
+                #     for (let img of images) {
+                #         if (!img.complete) {
+                #             return false;
+                #         }
+                #     }
+                #     return true;
+                # '''))
+                
+            except Exception as wait_error:
+                print(f"Wait error (continuing anyway): {str(wait_error)}")
+            
+            # Get the page source after everything has loaded
+            html_content = driver.page_source
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Find all image URLs
+            image_urls = []
+            
+            # Find all picture elements
+            print("Finding pictures...")
+            pictures = soup.find_all('picture', recursive=True)
+            # print(f"Found {len(pictures)} pictures")
+            for picture in pictures:
+                if len(image_urls) < 5 and (img := picture.find('img')):
+                    if url := img.get('src'):
+                        if url not in image_urls and not url.endswith(('.gif', '.svg')):
+                            image_urls.append(url)
+                            print(f"Added img URL: {url}")
+            
+            # Try preloaded links if we need more images
+            if len(image_urls) < 5:
+                preload_images = soup.find_all('link', {'rel': 'preload', 'as': 'image'})
+                for link in preload_images:
+                    if url := link.get('href'):
+                        if url not in image_urls and not url.endswith(('.gif', '.svg')):
+                            image_urls.append(url)
+                            if len(image_urls) >= 5:
+                                break
+            
+            # Try meta tags if we still need more images
+            if len(image_urls) < 5:
+                meta_images = soup.find_all('meta', {'itemprop': 'image'})
+                if not meta_images:
+                    meta_images = soup.find_all('meta', {'property': 'og:image'})
+                
+                for meta in meta_images:
+                    if url := meta.get('content'):
+                        if url not in image_urls and not url.endswith(('.gif', '.svg')):
+                            image_urls.append(url)
+                            if len(image_urls) >= 5:
+                                break
+            
+            # print(f"Returning {len(image_urls)} images for {final_url}")
+            # print("Image URLs:", image_urls)
+            
+            return jsonify(image_urls)
+        
+        finally:
+            driver.quit()
+            
     except Exception as e:
-        print(f"Error serving preview: {str(e)}")
-        return str(e), 500
+        print(f"Error fetching preview: {str(e)}")
+        return jsonify([]), 500
 
 @app.route('/api/search', methods=['POST'])
 def search():

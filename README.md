@@ -52,6 +52,7 @@ AutoBnb: Making searching for a place on Airbnb a breeze
    ```bash
    cd autobnb-app
    npm i
+   npm i @mui/icons-material
    npm run start
    ```
 
